@@ -320,8 +320,10 @@ label(new_dataset$mj_pastyr) <- "Marijuana use in the past year"
 table1(
   ~ bai_total + cesd + sex + race_eth + antidep + region + age_group + educ_cat + 
     hh_income + simp_marstat + Alcohol_Use + tob | mj_pastyr,
-  data = new_dataset
+  data = new_dataset,
+  caption = "Table 1: Characteristics of Population (marijuana vs. non-marijuana user in the past year)"
 )
+
 
 
 
