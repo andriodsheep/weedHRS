@@ -159,11 +159,15 @@ table(q6_clean$bai_total)
 #anxiety and depression composite variable - Nathan----
 q6_clean <- q6_clean %>%
   mutate(anx_depr = case_when(
-    q6_clean$cesd < 4 & q6_clean$bai_total < 12 ~ 1,
-    q6_clean$cesd < 4 & q6_clean$bai_total >= 12 ~ 2,
-    q6_clean$cesd >= 4 & q6_clean$bai_total < 12 ~ 3,
-    q6_clean$cesd >= 4 & q6_clean$bai_total >= 12 ~ 4
-  ))
+    cesd < 4 & bai_total < 12 ~ 1,
+    cesd < 4 & bai_total >= 12 ~ 2,
+    cesd >= 4 & bai_total < 12 ~ 3,
+    cesd >= 4 & bai_total >= 12 ~ 4
+  )) %>%
+  mutate(anx_depr = factor(anx_depr, levels = c(1, 2, 3, 4), labels = c("None", "Anxiety", "Depression", "Both Anxiety and Depression")))
+
+table(q6_clean$anx_depr)
+
 
 table(q6_clean$cesd) #is CESD continuous?
 table(q6_clean$antidep) # -8 is no response, make NA
@@ -195,11 +199,6 @@ table(q6_clean$educ_cat)
 
 #Look at all frequency tables
 lapply(q6_clean, table)
-
-
-#Table 1----
-table(q6_clean$mj_pastyr)
-
 names(q6_clean)
 
 #label the categorical variables
@@ -269,11 +268,19 @@ q6_clean$mj_pastyr <- factor(q6_clean$mj_pastyr,
                           levels = c(1,5), 
                           labels = c("Yes", "No"))
 table(q6_clean$mj_pastyr)
+table(q6_clean$mj_ever)
 
+#IF USE IN THE PAST YEAR
+q6_clean <- q6_clean %>%
+  mutate(mj_use_past_year = case_when(
+    q6_clean$mj_pastyr == 1 ~ "Use in Past Year",
+    q6_clean$mj_ever == 5 | q6_clean$mj_pastyr == 5 ~"Not used in Past Year",
+  ))
+table(q6_clean$mj_use_past_year)
 
 
 #Summary Statistics
-# Set custom labels for variables
+# Set custom labels for variables OVERRALL
 label(q6_clean$bai_total) <- "Anxiety Score (BAI Total)*"
 label(q6_clean$cesd) <- "Depression Score (CES-D)**"
 label(q6_clean$sex) <- "Sex"
@@ -290,16 +297,17 @@ label(q6_clean$cancer) <- "Cancer Status"
 label(q6_clean$chronic) <- "Chronic Condition"
 label(q6_clean$mj_pastyr) <- "Marijuana use in the past year"
 
-# Create the table with the new labels
+# create the table with the labels
 table1_data <- table1(~ bai_total + cesd + sex + race_eth + antidep + region + age_group + educ_cat + 
                         hh_income + simp_marstat + Alcohol_Use + tob, 
-                      data = q6_clean)
+                      data = q6_clean,
+                      title = "Table 1: Overall Characteristics of Population"
+)
 print(table1_data)
 
-
-# Table stratified by if use weed in past year PROBLEM IS CAN'T DO BECAUSE OF MISSING VALUES?
+# Table stratified by if use weed in past year PROBLEM IS CAN'T DO BECAUSE OF MISSING VALUES?----
 # Create a new dataset without missing values in mj_pastyr
-new_dataset <- q6_clean[!is.na(q6_clean$mj_pastyr), ]
+new_dataset <- q6_clean[!is.na(q6_clean$mj_use_past_year), ]
 
 label(new_dataset$bai_total) <- "Anxiety Score (BAI Total)*"
 label(new_dataset$cesd) <- "Depression Score (CES-D)**"
@@ -315,15 +323,38 @@ label(new_dataset$Alcohol_Use) <- "Alcohol Use"
 label(new_dataset$tob) <- "Tobacco Use"
 label(new_dataset$cancer) <- "Cancer Status"
 label(new_dataset$chronic) <- "Chronic Condition"
-label(new_dataset$mj_pastyr) <- "Marijuana use in the past year"
+label(new_dataset$anx_depr) <- "Anxiety and/or Depression"
+label(new_dataset$mj_use_past_year) <- "Marijuana use in the past year"
 
 table1(
-  ~ bai_total + cesd + sex + race_eth + antidep + region + age_group + educ_cat + 
-    hh_income + simp_marstat + Alcohol_Use + tob | mj_pastyr,
+  ~ bai_total + cesd + anx_depr + sex + race_eth + region + age_group + educ_cat + 
+    hh_income + simp_marstat + Alcohol_Use + tob | mj_use_past_year,
   data = new_dataset,
   caption = "Table 1: Characteristics of Population (marijuana vs. non-marijuana user in the past year)"
 )
 
 
+# By Anxiety and Depression ----
+new_dataset1 <- q6_clean[!is.na(q6_clean$anx_depr), ]
+label(new_dataset1$sex) <- "Sex"
+label(new_dataset1$race_eth) <- "Race/Ethnicity"
+label(new_dataset1$antidep) <- "Antidepressant Use"
+label(new_dataset1$region) <- "Geographic Region"
+label(new_dataset1$age_group) <- "Age Group"
+label(new_dataset1$educ_cat) <- "Education Level"
+label(new_dataset1$hh_income) <- "Household Income"
+label(new_dataset1$simp_marstat) <- "Marital Status"
+label(new_dataset1$Alcohol_Use) <- "Alcohol Use"
+label(new_dataset1$tob) <- "Tobacco Use"
+label(new_dataset1$cancer) <- "Cancer Status"
+label(new_dataset1$chronic) <- "Chronic Condition"
+label(new_dataset1$anx_depr) <- "Anxiety and/or Depression"
+label(new_dataset1$mj_use_past_year) <- "Marijuana use in the past year"
 
-
+# Creating Table 1 using new_dataset1
+table1(
+  ~ mj_use_past_year + sex + race_eth + region + age_group + educ_cat + 
+    hh_income + simp_marstat + Alcohol_Use + tob | anx_depr,
+  data = new_dataset1,
+  caption = "Table 1: Characteristics of Population by Anxiety and/or Depression"
+)
