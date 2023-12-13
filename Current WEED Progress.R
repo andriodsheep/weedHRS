@@ -41,7 +41,7 @@ weed_merge <- read.csv("weed_merge")
 weed_merged <- weed_merge %>%
   filter(HHIDPN %in% cannabis_module_clean$HHIDPN)
 table(cannabis_module_clean$QV402)
-table(weed$QV402)
+table(weed_merged$QV402)
 
 #Write Another CSV file that contains only weed HHIDPN
 write.csv(weed_merged, "weed_merged")
@@ -98,7 +98,7 @@ q6_clean <- q6_clean %>%
          "bai_faint" = "QLB035C5")
 
 #Operationalizing the Variables----
-q6_clean <- read_csv("q6_clean")
+# q6_clean <- read_csv("q6_clean") # Don't think we need this
 
 #Age Groups----
 q6_clean$age_group <- cut(q6_clean$age,
@@ -201,7 +201,7 @@ q6_clean <- q6_clean %>%
     educ %in% c(2, 3) ~ 2,  # Combine categories 2 and 3
     TRUE ~ educ             # Keep other categories as they are
   )) %>%
-  mutate(educ_cat = factor(educ, labels = c(" Less than High School", "High School/GED", "Some College", "College+")))
+  mutate(educ_cat = factor(educ, labels = c("Less than High School", "High School/GED", "Some College", "College+")))
 table(q6_clean$educ_cat)
 
 #Look at all frequency tables
@@ -362,8 +362,6 @@ table1(
   caption = "Table 1: Characteristics of Population by Anxiety and/or Depression"
 )
 
-
-
 #Table 1 NA's (ignore this)
 table(q6_clean$tob_ever) # tons of NAs here
 table(q6_clean$tob_cur)
@@ -372,3 +370,136 @@ table(q6_clean$tob_cigday)
 table(q6_clean$age) # people below 50
 
 #Race/Ethnicity, Geo Region, Education, Marital Status
+
+# Brian's Code ####
+
+## crude association with anxiety and depression ####
+# need to categorize exposure/outcome as numbers
+df_anx_depr <- new_dataset1 %>%
+  mutate(
+    anx_depr_num = case_when(
+      anx_depr == "None" ~ 0,
+      anx_depr == "Anxiety" ~ 1,
+      anx_depr == "Depression" ~ 2,
+      anx_depr == "Both Anxiety and Depression" ~ 3
+      ),
+    mj_use_past_year_num = case_when(
+      mj_use_past_year == "Not used in Past Year" ~ 0,
+      mj_use_past_year == "Use in Past Year" ~ 1
+      )
+    )
+#df_anx_depr$anx_depr_num <- relevel(factor(anx_depr_num), ref = "0")
+# df_anx_depr$mj_use_past_year_num <- relevel(factor(mj_use_past_year_num),ref="0")
+
+# factoring exposure and outcome
+df_anx_depr <- df_anx_depr %>%
+  mutate(
+    anx_depr_num = relevel(factor(anx_depr_num), ref = "0"),
+    mj_use_past_year_num <- relevel(factor(mj_use_past_year_num), ref = "0")
+  )
+
+glm.crude <- glm(mj_use_past_year_num ~ anx_depr_num, 
+                 data = df_anx_depr, 
+                 family = binomial())
+
+summary(glm.crude)
+glm.crude$coefficients
+confint(glm.crude)
+# To get the effect, we need to exponentiate the coefficients
+exp(glm.crude$coefficients)
+exp(confint(glm.crude))
+
+## adjusted association with anxiety and depression ####
+# need to categorize covariates as numeric
+df_anx_depr <- df_anx_depr %>%
+  mutate(
+    sex_num = case_when(
+      sex == "Male" ~ 0,
+      sex == "Female" ~ 1
+    ),
+    age_group_num = case_when(
+      age_group == "50-54 yrs" ~ 0,
+      age_group == "55-59 yrs" ~ 1,
+      age_group == "60-64 yrs" ~ 2,
+      age_group == "65-69 yrs" ~ 3,
+      age_group == "70-74 yrs" ~ 4,
+      age_group == "75-79 yrs" ~ 5,
+      age_group == "80-84 yrs" ~ 6,
+      age_group == "85+ yrs" ~ 7
+    ),
+    educ_cat_num = case_when(
+      educ_cat == "Less than High School" ~ 0,
+      educ_cat == "High School/GED" ~ 1,
+      educ_cat == "Some College" ~ 2,
+      educ_cat == "College+" ~ 3
+    ),
+    hh_income_category_num = case_when(
+      hh_income_category == "<19K" ~ 0,
+      hh_income_category == "19K-39,999" ~ 1,
+      hh_income_category == "40K-79,999" ~ 2,
+      hh_income_category == ">= 80K" ~ 3
+    ),
+    simp_marstat_num = case_when(
+      simp_marstat == "Married" ~ 0,
+      simp_marstat == "Never married" ~ 1,
+      simp_marstat == "Separated/divorced" ~ 2,
+      simp_marstat == "Widowed" ~ 3
+    ),
+    Alcohol_Use_num = case_when(
+      Alcohol_Use == "Never drinkers" ~ 0,
+      Alcohol_Use == "Former drinkers" ~ 1,
+      Alcohol_Use == "Low to moderate drinkers" ~ 2,
+      Alcohol_Use == "Heavy drinkers" ~ 3
+    ),
+    tob_num = case_when(
+      tob == "Non-smokers" ~ 0,
+      tob == "Former smokers" ~ 1,
+      tob == "Light smokers (1-13 cigarettes/day)" ~ 2,
+      tob == "Heavy smokers (>13 cigarettes)" ~ 3
+    )
+  )
+
+# checking coding worked
+table(df_anx_depr$sex_num)
+table(df_anx_depr$age_group_num)
+table(df_anx_depr$educ_cat_num)
+table(df_anx_depr$hh_income_category_num)
+table(df_anx_depr$simp_marstat_num)
+table(df_anx_depr$Alcohol_Use_num)
+table(df_anx_depr$tob_num)
+
+# factoring covariates
+df_anx_depr <- df_anx_depr %>%
+  mutate(
+    sex_num = relevel(factor(sex_num), ref = "0"),
+    age_group_num <- relevel(factor(age_group_num), ref = "3"),
+    educ_cat_num <- relevel(factor(educ_cat_num), ref = "3"),
+    hh_income_category_num <- relevel(factor(hh_income_category_num), ref = "2"),
+    simp_marstat_num <- relevel(factor(simp_marstat_num), ref = "0"),
+    Alcohol_Use_num <- relevel(factor(Alcohol_Use_num), ref = "0"),
+    tob_num <- relevel(factor(tob_num), ref = "0")
+  )
+
+
+glm.adjusted <- glm(mj_use_past_year_num ~ anx_depr_num + 
+                      sex_num + age_group_num + educ_cat_num + hh_income_category_num + simp_marstat_num + Alcohol_Use_num + tob_num, 
+                    data = df_anx_depr, 
+                    family = binomial())
+
+summary(glm.adjusted)
+glm.adjusted$coefficients
+confint(glm.adjusted)
+# To get the effect, we need to exponentiate the coefficients
+exp(glm.adjusted$coefficients)
+exp(confint(glm.adjusted))
+
+
+## updated table 1 ####
+table1(
+  ~ sex + race_eth + age_group + educ_cat + 
+    hh_income_category + simp_marstat + Alcohol_Use + tob | anx_depr,
+  data = df_anx_depr,
+  caption = "Table 1: Characteristics of Population by Anxiety and/or Depression"
+)
+
+
