@@ -131,6 +131,13 @@ q6_clean <- q6_clean %>%
   ))
 table(q6_clean$tob)
 
+q6_clean$tob <- factor(q6_clean$tob)
+q6_clean$tob <- factor(q6_clean$tob, 
+                       levels = c(1, 2, 3, 4), 
+                       labels = c("Non-smokers", 
+                                  "Former smokers", 
+                                  "Light smokers (1-13 cigarettes/day)", 
+                                  "Heavy smokers (>13 cigarettes)"))
 
 
 
@@ -247,14 +254,6 @@ q6_clean$simp_marstat <- factor(
 #ALCOHOL USE ALREADY DONE
 q6_clean$Alcohol_Use <- factor(q6_clean$Alcohol_Use)
 
-#TOBACCO USE NATHAN'S
-q6_clean$tob <- factor(q6_clean$tob)
-q6_clean$tob <- factor(q6_clean$tob, 
-                       levels = c(1, 2, 3, 4), 
-                       labels = c("Non-smokers", 
-                                  "Former smokers", 
-                                  "Light smokers (1-13 cigarettes/day)", 
-                                  "Heavy smokers (>13 cigarettes)"))
 
 #Look at data dictionary CAN'T FIND ON HRS
 q6_clean$cancer <- factor(q6_clean$cancer)
@@ -262,13 +261,6 @@ q6_clean$cancer <- factor(q6_clean$cancer)
 #chronic condition ALL NAs?
 q6_clean$chronic <- factor(q6_clean$chronic)
 table(q6_clean$chronic)
-
-#IF USE WEED IN PAST YEAR
-q6_clean$mj_pastyr <- factor(q6_clean$mj_pastyr, 
-                          levels = c(1,5), 
-                          labels = c("Yes", "No"))
-table(q6_clean$mj_pastyr)
-table(q6_clean$mj_ever)
 
 #IF USE IN THE PAST YEAR
 q6_clean <- q6_clean %>%
@@ -278,8 +270,19 @@ q6_clean <- q6_clean %>%
   ))
 table(q6_clean$mj_use_past_year)
 
+#income categories
+q6_clean <- q6_clean %>%
+  mutate(hh_income_category = factor(case_when(
+    hh_income < 19000 ~ "<19K",
+    hh_income >= 19000 & hh_income < 40000 ~ "19K-39,999",
+    hh_income >= 40000 & hh_income < 80000 ~ "40K-79,999",
+    hh_income >= 80000 ~ ">= 80K"
+  ), levels = c("<19K", "19K-39,999", "40K-79,999", ">= 80K")))
 
-#Summary Statistics
+table(q6_clean$hh_income_category)
+
+
+#Summary Statistics----
 # Set custom labels for variables OVERRALL
 label(q6_clean$bai_total) <- "Anxiety Score (BAI Total)*"
 label(q6_clean$cesd) <- "Depression Score (CES-D)**"
@@ -317,7 +320,7 @@ label(new_dataset$antidep) <- "Antidepressant Use"
 label(new_dataset$region) <- "Geographic Region"
 label(new_dataset$age_group) <- "Age Group"
 label(new_dataset$educ_cat) <- "Education Level"
-label(new_dataset$hh_income) <- "Household Income"
+label(new_dataset$hh_income_category) <- "Household Income"
 label(new_dataset$simp_marstat) <- "Marital Status"
 label(new_dataset$Alcohol_Use) <- "Alcohol Use"
 label(new_dataset$tob) <- "Tobacco Use"
@@ -328,7 +331,7 @@ label(new_dataset$mj_use_past_year) <- "Marijuana use in the past year"
 
 table1(
   ~ bai_total + cesd + anx_depr + sex + race_eth + region + age_group + educ_cat + 
-    hh_income + simp_marstat + Alcohol_Use + tob | mj_use_past_year,
+    hh_income_category + simp_marstat + Alcohol_Use + tob | mj_use_past_year,
   data = new_dataset,
   caption = "Table 1: Characteristics of Population (marijuana vs. non-marijuana user in the past year)"
 )
@@ -342,7 +345,7 @@ label(new_dataset1$antidep) <- "Antidepressant Use"
 label(new_dataset1$region) <- "Geographic Region"
 label(new_dataset1$age_group) <- "Age Group"
 label(new_dataset1$educ_cat) <- "Education Level"
-label(new_dataset1$hh_income) <- "Household Income"
+label(new_dataset1$hh_income_category) <- "Household Income"
 label(new_dataset1$simp_marstat) <- "Marital Status"
 label(new_dataset1$Alcohol_Use) <- "Alcohol Use"
 label(new_dataset1$tob) <- "Tobacco Use"
@@ -354,7 +357,18 @@ label(new_dataset1$mj_use_past_year) <- "Marijuana use in the past year"
 # Creating Table 1 using new_dataset1
 table1(
   ~ mj_use_past_year + sex + race_eth + region + age_group + educ_cat + 
-    hh_income + simp_marstat + Alcohol_Use + tob | anx_depr,
+    hh_income_category + simp_marstat + Alcohol_Use + tob | anx_depr,
   data = new_dataset1,
   caption = "Table 1: Characteristics of Population by Anxiety and/or Depression"
 )
+
+
+
+#Table 1 NA's (ignore this)
+table(q6_clean$tob_ever) # tons of NAs here
+table(q6_clean$tob_cur)
+table(q6_clean$tob_cigday)
+
+table(q6_clean$age) # people below 50
+
+#Race/Ethnicity, Geo Region, Education, Marital Status
