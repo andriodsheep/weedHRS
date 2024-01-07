@@ -32,10 +32,10 @@ table(cannabis_module_clean$QV402)
 table(q6_data_complete$QV402)
 
 # write out file - replace file path with your own
-write.csv(q6_data_complete, "weed_merge")
+write.csv(q6_data_complete, "weed_merge.csv")
 
 #read in the merged dataset
-weed_merge <- read.csv("weed_merge")
+weed_merge <- read.csv("weed_merge.csv")
 
 #filter out HHIDPN that are not in the weed module
 weed_merged <- weed_merge %>%
@@ -57,7 +57,8 @@ merged_data_NA <- merged_data %>% drop_na(QV402)
 q6_clean = subset(merged_data_NA, select = c(X, HHIDPN, H14HHRES, R14MSTAT, H14ITOT, H14INPOV, RAGENDER, R14CANCR, RAEDUC, 
                                              QV413, QN365, R14AGEY_B, R14CENREG, R14CENDIV, RARACEM, RAHISPAN, R14CESD, 
                                              QV412, QV402, QV403, QV409, QV410, QV411, QV751, QC128, QC129, QC130, QC131, 
-                                             QC116, QC117, QC118, QLB035C1, QLB035C2, QLB035C3, QLB035C4, QLB035C5))
+                                             QC116, QC117, QC118, QLB035C1, QLB035C2, QLB035C3, QLB035C4, QLB035C5, 
+                                             NLB041A, NLB041B, NLB041C, NLB041D, NLB041E))
 
 #rename remaining variables
 q6_clean <- q6_clean %>%
@@ -91,11 +92,16 @@ q6_clean <- q6_clean %>%
          "tob_ever" = "QC116",
          "tob_cur" = "QC117",
          "tob_cigday" = "QC118",
-         "bai_fearworst" = "QLB035C1",
-         "bai_nervous" = "QLB035C2",
-         "bai_tremble" = "QLB035C3",
-         "bai_feardie" = "QLB035C4",
-         "bai_faint" = "QLB035C5")
+         "bai_fearworst_18" = "QLB035C1",
+         "bai_nervous_18" = "QLB035C2",
+         "bai_tremble_18" = "QLB035C3",
+         "bai_feardie_18" = "QLB035C4",
+         "bai_faint_18" = "QLB035C5",
+         "bai_fearworst_12" = "NLB041A",
+         "bai_nervous_12" = "NLB041B",
+         "bai_tremble_12" = "NLB041C",
+         "bai_feardie_12" = "NLB041D",
+         "bai_faint_12" = "NLB041E")
 
 #Operationalizing the Variables----
 # q6_clean <- read_csv("q6_clean") # Don't think we need this
@@ -153,13 +159,36 @@ table(q6_clean$race_eth)
 
 
 #BAI Score----
-#total BAI - Nathan
+#BAI Score----
+#total BAI (2018 & 2012) - Nathan
 q6_clean <- q6_clean %>%
   mutate(
-    bai_total = bai_fearworst + bai_nervous + bai_tremble + bai_feardie + bai_faint
+    bai_total_18 = bai_fearworst_18 + bai_nervous_18 + bai_tremble_18 + bai_feardie_18 + bai_faint_18
   )
-table(q6_clean$bai_total)
+q6_clean <- q6_clean %>%
+  mutate(
+    bai_total_12 = bai_fearworst_12 + bai_nervous_12 + bai_tremble_12 + bai_feardie_12 + bai_faint_12
+  )
+table(q6_clean$bai_total_12)
+table(q6_clean$bai_total_18)
 
+#total BAI for whichever year has data
+q6_clean <- q6_clean %>%
+  mutate(
+    bai_total = case_when(
+      bai_total_12 > 0 ~ bai_total_12,
+      bai_total_18 > 0 ~ bai_total_18
+    )
+  )
+
+#identifier of which year is being used for BAI
+q6_clean <- q6_clean %>%
+  mutate(
+    bai_year = case_when(
+      bai_total_12 > 0 ~ 2012,
+      bai_total_18 > 0 ~ 2018
+    )
+  )
 #Should we include a column for BAI >= 12?
 
 
