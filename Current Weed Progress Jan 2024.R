@@ -4,8 +4,6 @@ library(tidyverse)
 library(table1)
 library(Hmisc)
 
-setwd("C:/Users/nfinney/OneDrive - Boston University/Documents/EP816/Weed data")
-
 ####DATA MERGING AND CLEANING
 
 #Weed Data from 2020 Module 10
