@@ -3,6 +3,7 @@ library(stringr)
 library(tidyverse)
 library(table1)
 library(Hmisc)
+
 #Merging ----
 base_data<-read.csv("q6_data.csv")
 names(base_data)
@@ -54,44 +55,50 @@ merged_data <- read.csv("weed_merged")
 merged_data_NA <- merged_data %>% drop_na(QV402)
 
 #drop all unused variables
-q6_clean = subset(merged_data_NA, select = c(X, HHIDPN, H14HHRES, R14MSTAT, H14ITOT, H14INPOV, RAGENDER, R14CANCR, RAEDUC, 
-                                             QV413, QN365, R14AGEY_B, R14CENREG, R14CENDIV, RARACEM, RAHISPAN, R14CESD, 
-                                             QV412, QV402, QV403, QV409, QV410, QV411, QV751, QC128, QC129, QC130, QC131, 
-                                             QC116, QC117, QC118, QLB035C1, QLB035C2, QLB035C3, QLB035C4, QLB035C5, 
-                                             NLB041A, NLB041B, NLB041C, NLB041D, NLB041E))
+q6_clean = subset(merged_data_NA, select = c(X, HHIDPN, H14INPOV, H15INPOV, RAGENDER, R14CANCR, R15CANCR, RAEDUC, 
+                                             QN365, RN365, R14AGEY_B, R15AGEY_B, RARACEM, RAHISPAN, R14CESD, R15CESD,
+                                             QV402, QV403, QC128, QC129, QC130, QC116, QC117, QC118, 
+                                             RC128, RC129, RC130, RC116, RC117, RC118,
+                                             NLB041A, NLB041B, NLB041C, NLB041D, NLB041E,
+                                             QLB035C1, QLB035C2, QLB035C3, QLB035C4, QLB035C5,
+                                             RLB035C1, RLB035C2, RLB035C3, RLB035C4, RLB035C5))
 
 #rename remaining variables
 q6_clean <- q6_clean %>%
   rename("hh_id" = "HHIDPN",
-         "hh_num" = "H14HHRES",
-         "marstat" = "R14MSTAT",
-         "hh_income" = "H14ITOT",
-         "hh_poverty" = "H14INPOV",
+         "hh_poverty_18" = "H14INPOV",
+         "hh_poverty_20" = "H15INPOV",
          "sex" = "RAGENDER",
-         "cancer" = "R14CANCR",
+         "cancer_18" = "R14CANCR",
+         "cancer_20" = "R15CANCR",
          "educ" = "RAEDUC",
-         "mj_rx" = "QV413",
-         "antidep" = "QN365",
-         "age" = "R14AGEY_B", 
-         "region"  = "R14CENREG",
-         "division" = "R14CENDIV",
+         "antidep_18" = "QN365",
+         "antidep_20" = "RN365",
+         "age_18" = "R14AGEY_B",
+         "age_20" = "R15AGEY_B",
          "race" = "RARACEM",
          "ethnicity" = "RAHISPAN",
-         "cesd" = "R14CESD",
-         "mj_health" = "QV412",
-         "mj_ever" = "QV402",
-         "mj_pastyr" = "QV403",
-         "mj_freq_max" = "QV409",
-         "mj_freq_cur" = "QV410",
-         "mj_nosmoke" = "QV411",
-         "chronic" = "QV751",
-         "alc_ever" = "QC128",
-         "alc_daywk" = "QC129",
-         "alc_drinkday" = "QC130",
-         "alc_binge" = "QC131",
-         "tob_ever" = "QC116",
-         "tob_cur" = "QC117",
-         "tob_cigday" = "QC118",
+         "cesd_18" = "R14CESD",
+         "cesd_20" = "R15CESD",
+         "mj_ever_18" = "QV402",
+         "mj_pastyr_18" = "QV403",
+         "alc_ever_18" = "QC128",
+         "alc_daywk_18" = "QC129",
+         "alc_drinkday_18" = "QC130",
+         "alc_ever_20" = "RC128",
+         "alc_daywk_20" = "RC129",
+         "alc_drinkday_20" = "RC130",
+         "tob_ever_18" = "QC116",
+         "tob_cur_18" = "QC117",
+         "tob_cigday_18" = "QC118",
+         "tob_ever_20" = "RC116",
+         "tob_cur_20" = "RC117",
+         "tob_cigday_20" = "RC118",
+         "bai_fearworst_20" = "RLB035C1",
+         "bai_nervous_20" = "RLB035C2",
+         "bai_tremble_20" = "RLB035C3",
+         "bai_feardie_20" = "RLB035C4",
+         "bai_faint_20" = "RLB035C5",
          "bai_fearworst_18" = "QLB035C1",
          "bai_nervous_18" = "QLB035C2",
          "bai_tremble_18" = "QLB035C3",
@@ -105,43 +112,66 @@ q6_clean <- q6_clean %>%
 
 
 #Age Groups----
-q6_clean$age_group <- cut(
-  q6_clean$age,
+#2018
+q6_clean$age_group_18 <- cut(
+  q6_clean$age_18,
   breaks = c(49, 59, 69, 79, 89, Inf),
   labels = c("50-59", "60-69", "70-79", "80-89", "90+"),
   right = FALSE
 )
+
+#2020
+q6_clean$age_group_20 <- cut(
+  q6_clean$age_20,
+  breaks = c(49, 59, 69, 79, 89, Inf),
+  labels = c("50-59", "60-69", "70-79", "80-89", "90+"),
+  right = FALSE
+)
+
+#Age for regressions
+q6_clean$age_group <- ifelse(q6_clean$mj_year == 2018, q6_clean$age_18,
+                             ifelse(q6_clean$mj_year == 2020, q6_clean$age_20, NA))
+  
 table(q6_clean$age_group)
 
-
-#Smoking Not Using----
-q6_clean$Tobacco_Use <- with(q6_clean, ifelse(tob_ever == 5, "Never",
-                                              ifelse(tob_ever == 1 & tob_cur == 5 | tob_cur == 5, "Former",
-                                                     ifelse(tob_cur == 1 & tob_cigday < 25 | tob_cigday < 25, "Light",
-                                                            ifelse(tob_cur == 1 & tob_cigday >= 25 | tob_cigday >= 25, "Heavy", NA)))))
-
-q6_clean$Tobacco_Use <- factor(q6_clean$Tobacco_Use, 
-                               levels = c("Never", "Former", "Light", "Heavy"))
-table(q6_clean$Tobacco_Use)
-
-
 #Nathan Smoking----
+#2018
 q6_clean <- q6_clean %>%
-  mutate(tob = case_when(
-    q6_clean$tob_cur == 1 & q6_clean$tob_cigday > 13 ~ 4,
-    q6_clean$tob_cur == 1 & q6_clean$tob_cigday <= 13 ~ 3,
-    q6_clean$tob_cur == 5 & q6_clean$tob_ever == 1 ~ 2,
-    q6_clean$tob_cur == 5 | q6_clean$tob_ever == 5 ~ 1
+  mutate(tob_18 = case_when(
+    q6_clean$tob_cur_18 == 1 & q6_clean$tob_cigday_18 > 13 ~ 4,
+    q6_clean$tob_cur_18 == 1 & q6_clean$tob_cigday_18 <= 13 ~ 3,
+    q6_clean$tob_cur_18 == 5 & q6_clean$tob_ever_18 == 1 ~ 2,
+    q6_clean$tob_cur_18 == 5 | q6_clean$tob_ever_18 == 5 ~ 1
   ))
 table(q6_clean$tob)
 
-q6_clean$tob <- factor(q6_clean$tob)
-q6_clean$tob <- factor(q6_clean$tob, 
+q6_clean$tob_18 <- factor(q6_clean$tob_18, 
                        levels = c(1, 2, 3, 4), 
                        labels = c("Non-smokers", 
                                   "Former smokers", 
                                   "Light smokers (1-13 cigarettes/day)", 
                                   "Heavy smokers (>13 cigarettes)"))
+
+#2020
+q6_clean <- q6_clean %>%
+  mutate(tob_20 = case_when(
+    q6_clean$tob_cur_20 == 1 & q6_clean$tob_cigday_20 > 13 ~ 4,
+    q6_clean$tob_cur_20 == 1 & q6_clean$tob_cigday_20 <= 13 ~ 3,
+    q6_clean$tob_cur_20 == 5 & q6_clean$tob_ever_20 == 1 ~ 2,
+    q6_clean$tob_cur_20 == 5 | q6_clean$tob_ever_20 == 5 ~ 1
+  ))
+table(q6_clean$tob_20)
+
+q6_clean$tob_20 <- factor(q6_clean$tob_20, 
+                       levels = c(1, 2, 3, 4), 
+                       labels = c("Non-smokers", 
+                                  "Former smokers", 
+                                  "Light smokers (1-13 cigarettes/day)", 
+                                  "Heavy smokers (>13 cigarettes)"))
+
+#tobacco for regressions
+q6_clean$tob <- ifelse(q6_clean$mj_year == 2018, q6_clean$tob_18,
+                             ifelse(q6_clean$mj_year == 2020, q6_clean$tob_20, NA))
 
 table(q6_clean$tob)
 
@@ -155,7 +185,11 @@ table(q6_clean$race_eth)
 
 
 #BAI Score----
-#total BAI (2018 & 2012) - Nathan
+#total BAI (2020, 2018, 2012) - Nathan
+q6_clean <- q6_clean %>%
+  mutate(
+    bai_total_20 = bai_fearworst_20 + bai_nervous_20 + bai_tremble_20 + bai_feardie_20 + bai_faint_20
+  )
 q6_clean <- q6_clean %>%
   mutate(
     bai_total_18 = bai_fearworst_18 + bai_nervous_18 + bai_tremble_18 + bai_feardie_18 + bai_faint_18
@@ -166,34 +200,57 @@ q6_clean <- q6_clean %>%
   )
 table(q6_clean$bai_total_12)
 table(q6_clean$bai_total_18)
+table(q6_clean$bai_total_20)
 
-#total BAI for whichever year has data
+#total BAI for whichever year has data for 2018 outcome
 q6_clean <- q6_clean %>%
   mutate(
-    bai_total = case_when(
-      bai_total_12 > 0 ~ bai_total_12,
-      bai_total_18 > 0 ~ bai_total_18
+    bai_total_18_nonmiss = case_when(
+      bai_total_18 > 0 ~ bai_total_18,
+      bai_total_12 > 0 ~ bai_total_12
     )
   )
-table(q6_clean$bai_total)
+
+#total BAI for whichever year has data for 2020 outcome
+q6_clean <- q6_clean %>%
+  mutate(
+    bai_total_20_nonmiss = case_when(
+      bai_total_20 > 0 ~ bai_total_20,
+      bai_total_18 > 0 ~ bai_total_18,
+      bai_total_12 > 0 ~ bai_total_12
+    )
+  )
+table(q6_clean$bai_total_18_nonmiss)
+table(q6_clean$bai_total_20_nonmiss)
+
 
 #identifier of which year is being used for BAI
 q6_clean <- q6_clean %>%
   mutate(
     bai_year = case_when(
-      bai_total_12 > 0 ~ 2012,
-      bai_total_18 > 0 ~ 2018
+      bai_total_20 > 0 ~ 2020,
+      bai_total_18 > 0 ~ 2018,
+      bai_total_12 > 0 ~ 2012
     )
   )
 
 table(q6_clean$bai_year)
 
+#BAI for regressions
+q6_clean$bai_total <- ifelse(q6_clean$mj_year == 2018, q6_clean$bai_total_18_nonmiss,
+                       ifelse(q6_clean$mj_year == 2020, q6_clean$bai_total_20_nonmiss, NA))
+
+
 #Should we include a column for BAI >= 12?
 q6_clean <- q6_clean %>%
   mutate(
-    bai_12 = if_else(bai_total >= 12, 1, 0)
+    anx_12 = if_else(bai_total >= 12, 1, 0)
   )
-table(q6_clean$bai_12)
+table(q6_clean$anx_12)
+
+#CESD
+q6_clean$cesd <- ifelse(q6_clean$mj_year == 2018, q6_clean$cesd_18,
+                             ifelse(q6_clean$mj_year == 2020, q6_clean$cesd_20, NA))
 
 
 #anxiety and depression composite variable - Nathan----
@@ -224,17 +281,35 @@ table(q6_clean$depress_4)
 
 
 #Alcohol Use----
-q6_clean$Alcohol_Use <- with(q6_clean, ifelse(alc_ever == 3, "Never drinkers",
-                                              ifelse(is.na(alc_daywk) | alc_daywk == 0, "Former drinkers",
-                                                     ifelse((sex == 2 & (alc_daywk * alc_drinkday) >= 8) | 
-                                                              (sex == 1 & (alc_daywk * alc_drinkday) >= 15), 
+#2018
+q6_clean$alc_18 <- with(q6_clean, ifelse(alc_ever_18 == 3, "Never drinkers",
+                                              ifelse(is.na(alc_daywk_18) | alc_daywk_18 == 0, "Former drinkers",
+                                                     ifelse((sex == 2 & (alc_daywk_18 * alc_drinkday_18) >= 8) | 
+                                                              (sex == 1 & (alc_daywk_18 * alc_drinkday_18) >= 15), 
                                                             "Heavy drinkers",
                                                             "Low to moderate drinkers"))))
 
-q6_clean$Alcohol_Use <- factor(q6_clean$Alcohol_Use, 
+q6_clean$alc_18 <- factor(q6_clean$alc_18, 
                                levels = c("Never drinkers", "Former drinkers", "Low to moderate drinkers", "Heavy drinkers"))
 
-table(q6_clean$Alcohol_Use)
+#2020
+q6_clean$alc_20 <- with(q6_clean, ifelse(alc_ever_20 == 3, "Never drinkers",
+                                              ifelse(is.na(alc_daywk_20) | alc_daywk_20 == 0, "Former drinkers",
+                                                     ifelse((sex == 2 & (alc_daywk_20 * alc_drinkday_20) >= 8) | 
+                                                              (sex == 1 & (alc_daywk_20 * alc_drinkday_20) >= 15), 
+                                                            "Heavy drinkers",
+                                                            "Low to moderate drinkers"))))
+
+q6_clean$alc_20 <- factor(q6_clean$alc_20, 
+                               levels = c("Never drinkers", "Former drinkers", "Low to moderate drinkers", "Heavy drinkers"))
+
+
+#alcohol use for regressions
+q6_clean$Alcohol_Use <- ifelse(q6_clean$mj_year == 2018, q6_clean$alc_18,
+                              ifelse(q6_clean$mj_year == 2020, q6_clean$alc_20, NA))
+
+table(q6_clean$alc_18)
+table(q6_clean$alc_20)
 
 
 #Education Levels----
@@ -265,10 +340,24 @@ q6_clean$race_eth <- factor(q6_clean$race_eth,
                                        "Other non-hispanic"))
 
 #ANTIDEP USE
+
+##2018
 # Replace -8 with NA
-q6_clean$antidep[q6_clean$antidep == -8] <- NA
+q6_clean$antidep_18[q6_clean$antidep_18 == -8] <- NA
 #factor with levels 1 and 5, and labels "Yes" and "No"
-q6_clean$antidep <- factor(q6_clean$antidep, levels = c(1, 5), labels = c("Yes", "No"))
+q6_clean$antidep_18 <- factor(q6_clean$antidep_18, levels = c(1, 5), labels = c("Yes", "No"))
+
+#2020
+# Replace -8 with NA
+q6_clean$antidep_20[q6_clean$antidep_20 == -8] <- NA
+#factor with levels 1 and 5, and labels "Yes" and "No"
+q6_clean$antidep_20 <- factor(q6_clean$antidep_20, levels = c(1, 5), labels = c("Yes", "No"))
+
+#antidepressant use for regressions
+q6_clean$antidep <- ifelse(q6_clean$mj_year == 2018, q6_clean$antidep_18,
+                               ifelse(q6_clean$mj_year == 2020, q6_clean$antidep_20, NA))
+
+
 
 #age group ALREADY DONE
 q6_clean$age_group <- factor(q6_clean$age_group)
@@ -276,43 +365,47 @@ q6_clean$age_group <- factor(q6_clean$age_group)
 #education ALREADY DONE
 q6_clean$educ_cat <- factor(q6_clean$educ_cat)
 
-#MARITAL STATUS
-# create a new column with simplified marital status categories
-q6_clean$simp_marstat <- factor(
-  case_when(
-    q6_clean$marstat %in% c(1,3) ~ "Married",
-    q6_clean$marstat %in% c(2, 4, 5, 6) ~ "Separated/divorced",
-    q6_clean$marstat %in% c(7) ~ "Widowed",
-    q6_clean$marstat %in% c(8) ~ "Never married"
-  )
-)
-
 #ALCOHOL USE ALREADY DONE
 q6_clean$Alcohol_Use <- factor(q6_clean$Alcohol_Use)
 
 
 #Look at data dictionary CAN'T FIND ON HRS
-q6_clean$cancer <- factor(q6_clean$cancer)
+q6_clean$cancer_18 <- factor(q6_clean$cancer_18)
+q6_clean$cancer_20 <- factor(q6_clean$cancer_20)
+q6_clean$cancer <- ifelse(q6_clean$mj_year == 2018, q6_clean$cancer_18,
+                           ifelse(q6_clean$mj_year == 2020, q6_clean$cancer_20, NA))
 
-#chronic condition ALL NAs?
-q6_clean$chronic <- factor(q6_clean$chronic)
-table(q6_clean$chronic)
 
 #IF USE IN THE PAST YEAR
 q6_clean <- q6_clean %>%
   mutate(mj_use_past_year = case_when(
-    q6_clean$mj_pastyr == 1 ~ "Use in Past Year",
-    q6_clean$mj_ever == 5 | q6_clean$mj_pastyr == 5 ~"Not used in Past Year",
+    q6_clean$mj_pastyr_18 == 1 ~ "Use in Past Year",
+    q6_clean$mj_ever_18 == 5 | q6_clean$mj_pastyr_18 == 5 ~"Not used in Past Year",
   ))
-table(q6_clean$mj_use_past_year)
+table(q6_clean$mj_use_past_year_18)
 
 #income categories, hh poverty
-table(q6_clean$hh_poverty)
-q6_clean$hh_poverty <- factor(
-  q6_clean$hh_poverty,
+#2018
+q6_clean$hh_poverty_18 <- factor(
+  q6_clean$hh_poverty_18,
   levels = c(0, 1),
   labels = c("Above poverty threshold", "Below poverty threshold")
 )
+
+#2020
+q6_clean$hh_poverty_20 <- factor(
+  q6_clean$hh_poverty_20,
+  levels = c(0, 1),
+  labels = c("Above poverty threshold", "Below poverty threshold")
+)
+table(q6_clean$hh_poverty_18)
+table(q6_clean$hh_poverty_20)
+
+
+#poverty status for regressions
+q6_clean$hh_poverty <- ifelse(q6_clean$mj_year == 2018, q6_clean$hh_poverty_18,
+                           ifelse(q6_clean$mj_year == 2020, q6_clean$hh_poverty_20, NA))
+
 
 #Dropping NAs from variables in Table 1
 q6_clean <- q6_clean[q6_clean$age >= 50, ] # age
