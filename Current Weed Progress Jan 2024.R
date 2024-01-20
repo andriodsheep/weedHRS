@@ -68,8 +68,6 @@ table(weed_merge_clean$mj_use_mod10)
 
 #Write Another CSV file that contains only weed HHIDPN
 write.csv(weed_merge_clean, "weed_merged")
-
-#Nathan's Code Cleaning----
 merged_data <- read.csv("weed_merged")
 
 #drop all unused variables
