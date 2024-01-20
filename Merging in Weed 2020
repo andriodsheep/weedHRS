@@ -1,8 +1,3 @@
-library(haven) 
-library(stringr)
-library(tidyverse)
-library(table1)
-library(Hmisc)
 #Merging ----
 
 #Weed Data from 2020 Module 10
@@ -37,13 +32,10 @@ cannabis_module_clean <- cannabis_module %>%
          HHIDPN = as.numeric(paste0(HHID,PN))) %>%
   select(-c(HHID,PN))
 
-#merge the 2 datasets
-q6_data_complete<-left_join(base_data,cannabis_module_clean)
+#merge the 3 datasets
+combined_weed_cannabis <- full_join(weed2020, cannabis_module_clean, by = "HHIDPN")
+q6_data_complete <- left_join(combined_weed_cannabis, base_data, by = "HHIDPN")
 
-#merge the weed 2020 in
-table(weed2020$mj_use_mod10)
-q6_data_complete <- left_join(q6_data_complete, weed2020, by = "HHIDPN")
-table(q6_data_complete$mj_use_mod10) #drops pretty much all rows from weed 2020?
 
 #drop unnecessary id columns
 q6_data_complete <- q6_data_complete %>%
@@ -63,8 +55,10 @@ table(q6_data_complete$mj_use_mod10)
 weed_merge_clean <- q6_data_complete %>%
   filter(!is.na(QV402) | !is.na(mj_use_mod10))
 
-table(cannabis_module_clean$QV402)
+table(q6_data_complete$QV402)
 table(weed_merge_clean$QV402)
+table(q6_data_complete$mj_use_mod10)
+table(weed_merge_clean$mj_use_mod10)
 
 #Write Another CSV file that contains only weed HHIDPN
 write.csv(weed_merge_clean, "weed_merged")
