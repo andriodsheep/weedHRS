@@ -474,6 +474,38 @@ df_anx_depr <- new_dataset1 %>%
 #df_anx_depr$anx_depr_num <- relevel(factor(anx_depr_num), ref = "0")
 # df_anx_depr$mj_use_past_year_num <- relevel(factor(mj_use_past_year_num),ref="0")
 
+##unadjusted association - depression only - Nathan##
+# need to categorize exposure/outcome as numbers
+df_depr <- new_dataset %>%
+  mutate(
+    depr_num = case_when(
+      depress_4 == "Not Depressed" ~ 0,
+      depress_4 == "Depressed" ~ 1,
+    ),
+    mj_use_past_year_num = case_when(
+      mj_use_past_year == "Not used in Past Year" ~ 0,
+      mj_use_past_year == "Use in Past Year" ~ 1
+    )
+  )
+
+# factoring exposure and outcome
+df_depr <- df_depr %>%
+  mutate(
+    depr_num = relevel(factor(depr_num), ref = "0"),
+    mj_use_past_year_num <- relevel(factor(mj_use_past_year_num), ref = "0")
+  )
+
+glm.crude <- glm(mj_use_past_year_num ~ depr_num, 
+                 data = df_depr, 
+                 family = binomial())
+
+summary(glm.crude)
+glm.crude$coefficients
+confint(glm.crude)
+# To get the effect, we need to exponentiate the coefficients
+exp(glm.crude$coefficients)
+exp(confint(glm.crude))
+
 # factoring exposure and outcome
 df_anx_depr <- df_anx_depr %>%
   mutate(
