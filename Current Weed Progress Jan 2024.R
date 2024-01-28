@@ -235,17 +235,26 @@ q6_clean <- q6_clean %>%
 table(q6_clean$anx_12)
 
 
-##Anxiety & Depression Composite----
+#Anxiety & Depression Composite----
+
+# q6_clean <- q6_clean %>%
+#   mutate(anx_depr = case_when(
+#     cesd < 4 & bai_total < 12 ~ 1,
+#     cesd < 4 & bai_total >= 12 ~ 2,
+#     cesd >= 4 & bai_total < 12 ~ 3,
+#     cesd >= 4 & bai_total >= 12 ~ 4
+#   )) %>%
+#   mutate(anx_depr = factor(anx_depr, levels = c(1, 2, 3, 4), labels = c("None", "Anxiety", "Depression", "Both Anxiety and Depression")))
+# 
+# table(q6_clean$anx_depr)
+
 q6_clean <- q6_clean %>%
   mutate(anx_depr = case_when(
-    cesd < 4 & bai_total < 12 ~ 1,
-    cesd < 4 & bai_total >= 12 ~ 2,
-    cesd >= 4 & bai_total < 12 ~ 3,
-    cesd >= 4 & bai_total >= 12 ~ 4
-  )) %>%
-  mutate(anx_depr = factor(anx_depr, levels = c(1, 2, 3, 4), labels = c("None", "Anxiety", "Depression", "Both Anxiety and Depression")))
-
-table(q6_clean$anx_depr)
+    depress_4 == "Not Depressed" & (anx_12 == "Not Anxious" | is.na(anx_12)) ~ 1,
+    depress_4 == "Depressed" & (anx_12 == "Not Anxious" | is.na(anx_12)) ~ 2,
+    depress_4 == "Depressed" & anx_12 == "Anxious" ~ 3
+    )) %>%
+  mutate(anx_depr = factor(anx_depr, levels = c(1, 2, 3), labels = c("None", "Depression", "Depression and Anxiety")))
 
 
 ###Confounders
@@ -412,119 +421,140 @@ q6_clean$antidep <- factor(q6_clean$antidep, levels = c(1, 5), labels = c("Yes",
 table(q6_clean$antidep)
 
 
-####TABLE CREATION
+# TABLE CREATION ----
 
 #Dropping NAs from variables in Table 1
 q6_clean <- q6_clean[q6_clean$age >= 50, ] # age
 
 # tob, race, education, maritial status, poverty
-q6_clean <- q6_clean[complete.cases(q6_clean[c("tob", "race_eth", "educ_cat", "simp_marstat", "hh_poverty", "antidep")]), ]
+# q6_clean <- q6_clean[complete.cases(q6_clean[c("tob", "race_eth", "educ_cat", "simp_marstat", "hh_poverty", "antidep")]), ]
+
+# q6_clean <- q6_clean[complete.cases(q6_clean[c("tob", "race_eth", "educ_cat", "hh_poverty", "antidep")]), ]
 
 
 #Summary Statistics----
-# Set custom labels for variables OVERRALL
-label(q6_clean$bai_total) <- "Anxiety Score (BAI Total)*"
-label(q6_clean$cesd) <- "Depression Score (CES-D)**"
-label(q6_clean$sex) <- "Sex"
-label(q6_clean$race_eth) <- "Race/Ethnicity"
-label(q6_clean$antidep) <- "Antidepressant Use"
-label(q6_clean$age_group) <- "Age Group"
-label(q6_clean$educ_cat) <- "Education Level"
-label(q6_clean$hh_poverty) <- "Household Poverty Threshold"
-label(q6_clean$simp_marstat) <- "Marital Status"
-label(q6_clean$Alcohol_Use) <- "Alcohol Use"
-label(q6_clean$tob) <- "Tobacco Use"
-label(q6_clean$cancer) <- "Cancer Status"
-label(q6_clean$chronic) <- "Chronic Condition"
-label(q6_clean$mj_use_combined) <- "Marijuana use in the past year"
-
-# create the table with the labels
-table1_data <- table1(~ bai_total + cesd + sex + race_eth + antidep + age_group + educ_cat + 
-                        hh_poverty + simp_marstat + Alcohol_Use + tob, 
-                      data = q6_clean,
-                      title = "Table 1: Overall Characteristics of Population"
-)
-print(table1_data)
+# # Set custom labels for variables OVERRALL
+# label(q6_clean$bai_total) <- "Anxiety Score (BAI Total)*"
+# label(q6_clean$cesd) <- "Depression Score (CES-D)**"
+# label(q6_clean$sex) <- "Sex"
+# label(q6_clean$race_eth) <- "Race/Ethnicity"
+# label(q6_clean$antidep) <- "Antidepressant Use"
+# label(q6_clean$age_group) <- "Age Group"
+# label(q6_clean$educ_cat) <- "Education Level"
+# label(q6_clean$hh_poverty) <- "Household Poverty Threshold"
+# # label(q6_clean$simp_marstat) <- "Marital Status"
+# label(q6_clean$Alcohol_Use) <- "Alcohol Use"
+# label(q6_clean$tob) <- "Tobacco Use"
+# label(q6_clean$cancer) <- "Cancer Status"
+# # label(q6_clean$chronic) <- "Chronic Condition"
+# label(q6_clean$mj_use_combined) <- "Marijuana use in the past year"
+# 
+# # create the table with the labels
+# # table1_data <- table1(~ bai_total + cesd + sex + race_eth + antidep + age_group + educ_cat + 
+# #                         hh_poverty + simp_marstat + Alcohol_Use + tob, 
+# #                       data = q6_clean,
+# #                       title = "Table 1: Overall Characteristics of Population"
+# # )
+# table1_data <- table1(~ bai_total + cesd + sex + race_eth + antidep + age_group + educ_cat + 
+#                         hh_poverty + Alcohol_Use + tob, 
+#                       data = q6_clean,
+#                       title = "Table 1: Overall Characteristics of Population"
+# )
+# 
+# print(table1_data)
 
 # Table stratified by if use weed in past year PROBLEM IS CAN'T DO BECAUSE OF MISSING VALUES?----
 # Create a new dataset without missing values in mj_pastyr
-new_dataset <- q6_clean[!is.na(q6_clean$mj_use_past_year), ]
-
-label(new_dataset$bai_total) <- "Anxiety Score (BAI Total)*"
-label(new_dataset$cesd) <- "Depression Score (CES-D)**"
-label(new_dataset$sex) <- "Sex"
-label(new_dataset$race_eth) <- "Race/Ethnicity"
-label(new_dataset$antidep) <- "Antidepressant Use"
-label(new_dataset$region) <- "Geographic Region"
-label(new_dataset$age_group) <- "Age Group"
-label(new_dataset$educ_cat) <- "Education Level"
-label(new_dataset$hh_poverty) <- "Household Poverty Threshold"
-label(new_dataset$simp_marstat) <- "Marital Status"
-label(new_dataset$Alcohol_Use) <- "Alcohol Use"
-label(new_dataset$tob) <- "Tobacco Use"
-label(new_dataset$cancer) <- "Cancer Status"
-label(new_dataset$chronic) <- "Chronic Condition"
-label(new_dataset$anx_depr) <- "Anxiety and/or Depression"
-label(new_dataset$mj_use_combined) <- "Marijuana use in the past year"
-
-table1(
-  ~ bai_total + cesd + anx_depr + sex + race_eth + age_group + educ_cat + 
-    hh_poverty + simp_marstat + Alcohol_Use + tob | mj_use_past_year,
-  data = new_dataset,
-  caption = "Table 1: Characteristics of Population (marijuana vs. non-marijuana user in the past year)"
-)
+# new_dataset <- q6_clean[!is.na(q6_clean$mj_use_past_year), ]
+# 
+# label(new_dataset$bai_total) <- "Anxiety Score (BAI Total)*"
+# label(new_dataset$cesd) <- "Depression Score (CES-D)**"
+# label(new_dataset$sex) <- "Sex"
+# label(new_dataset$race_eth) <- "Race/Ethnicity"
+# label(new_dataset$antidep) <- "Antidepressant Use"
+# label(new_dataset$region) <- "Geographic Region"
+# label(new_dataset$age_group) <- "Age Group"
+# label(new_dataset$educ_cat) <- "Education Level"
+# label(new_dataset$hh_poverty) <- "Household Poverty Threshold"
+# label(new_dataset$simp_marstat) <- "Marital Status"
+# label(new_dataset$Alcohol_Use) <- "Alcohol Use"
+# label(new_dataset$tob) <- "Tobacco Use"
+# label(new_dataset$cancer) <- "Cancer Status"
+# label(new_dataset$chronic) <- "Chronic Condition"
+# label(new_dataset$anx_depr) <- "Anxiety and/or Depression"
+# label(new_dataset$mj_use_combined) <- "Marijuana use in the past year"
+# 
+# table1(
+#   ~ bai_total + cesd + anx_depr + sex + race_eth + age_group + educ_cat + 
+#     hh_poverty + simp_marstat + Alcohol_Use + tob | mj_use_past_year,
+#   data = new_dataset,
+#   caption = "Table 1: Characteristics of Population (marijuana vs. non-marijuana user in the past year)"
+# )
 
 # By Anxiety and Depression ----
-new_dataset1 <- q6_clean[!is.na(q6_clean$anx_depr), ]
-label(new_dataset1$sex) <- "Sex"
-label(new_dataset1$race_eth) <- "Race/Ethnicity"
-label(new_dataset1$antidep) <- "Antidepressant Use"
-label(new_dataset1$age_group) <- "Age Group"
-label(new_dataset1$educ_cat) <- "Education Level"
-label(new_dataset1$hh_poverty) <- "Household Poverty Threshold"
-label(new_dataset1$simp_marstat) <- "Marital Status"
-label(new_dataset1$Alcohol_Use) <- "Alcohol Use"
-label(new_dataset1$tob) <- "Tobacco Use"
-label(new_dataset1$cancer) <- "Cancer Status"
-label(new_dataset1$chronic) <- "Chronic Condition"
-label(new_dataset1$anx_depr) <- "Anxiety and/or Depression"
-label(new_dataset1$mj_use_past_year) <- "Marijuana use in the past year"
+q6_clean_labels <- q6_clean[!is.na(q6_clean$anx_depr), ]
 
-# Creating Table 1 using new_dataset1
+label(q6_clean_labels$sex) <- "Sex"
+label(q6_clean_labels$race_eth) <- "Race/Ethnicity"
+label(q6_clean_labels$antidep) <- "Antidepressant Use"
+label(q6_clean_labels$age_group) <- "Age Group"
+label(q6_clean_labels$educ_cat) <- "Education Level"
+label(q6_clean_labels$hh_poverty) <- "Household Poverty Threshold"
+# label(q6_clean_labels$simp_marstat) <- "Marital Status"
+label(q6_clean_labels$Alcohol_Use) <- "Alcohol Use"
+label(q6_clean_labels$tob) <- "Tobacco Use"
+label(q6_clean_labels$cancer) <- "Cancer Status"
+# label(q6_clean_labels$chronic) <- "Chronic Condition"
+label(q6_clean_labels$anx_depr) <- "Anxiety and/or Depression"
+label(q6_clean_labels$antidep) <- "Antidepressant Use"
+# label(q6_clean_labels$cancer) <- "Cancer Status"
+label(q6_clean_labels$mj_use_combined) <- "Marijuana use in the past year"
+
+# Creating Table 1 using q6_clean_labels
+# table1(
+#   ~ sex + race_eth + age_group + educ_cat + 
+#     hh_poverty + simp_marstat + Alcohol_Use + tob | anx_depr,
+#   data = q6_clean_labels,
+#   caption = "Table 1: Characteristics of Population by Anxiety and/or Depression"
+# )
+
+
 table1(
   ~ sex + race_eth + age_group + educ_cat + 
-    hh_poverty + simp_marstat + Alcohol_Use + tob | anx_depr,
-  data = new_dataset1,
+    hh_poverty + Alcohol_Use + tob + antidep | anx_depr,
+  data = q6_clean_labels,
   caption = "Table 1: Characteristics of Population by Anxiety and/or Depression"
 )
 
+
+
 # By CESD only ----
-new_dataset1 <- q6_clean[!is.na(q6_clean$cesd), ]
-new_dataset1$cesd <- as.factor(new_dataset1$cesd)
-
-label(new_dataset1$sex) <- "Sex"
-label(new_dataset1$race_eth) <- "Race/Ethnicity"
-label(new_dataset1$antidep) <- "Antidepressant Use"
-label(new_dataset1$region) <- "Geographic Region"
-label(new_dataset1$age_group) <- "Age Group"
-label(new_dataset1$educ_cat) <- "Education Level"
-label(new_dataset1$hh_income_category) <- "Household Income"
-label(new_dataset1$simp_marstat) <- "Marital Status"
-label(new_dataset1$Alcohol_Use) <- "Alcohol Use"
-label(new_dataset1$tob) <- "Tobacco Use"
-label(new_dataset1$cancer) <- "Cancer Status"
-label(new_dataset1$chronic) <- "Chronic Condition"
-label(new_dataset1$anx_depr) <- "Anxiety and/or Depression"
-label(new_dataset1$mj_use_past_year) <- "Marijuana use in the past year"
-label(new_dataset1$cesd) <- "Depression Score (CES-D)"
-
-# Creating Table 1 using new_dataset1
-table1(
-  ~ sex + race_eth + age_group + educ_cat + 
-    hh_income_category + simp_marstat + Alcohol_Use + tob | cesd,
-  data = new_dataset1,
-  caption = "Table 1: Characteristics of Population by Depression Score (CES-D)"
-)
+# new_dataset1 <- q6_clean[!is.na(q6_clean$cesd), ]
+# new_dataset1$cesd <- as.factor(new_dataset1$cesd)
+# 
+# label(new_dataset1$sex) <- "Sex"
+# label(new_dataset1$race_eth) <- "Race/Ethnicity"
+# label(new_dataset1$antidep) <- "Antidepressant Use"
+# label(new_dataset1$region) <- "Geographic Region"
+# label(new_dataset1$age_group) <- "Age Group"
+# label(new_dataset1$educ_cat) <- "Education Level"
+# label(new_dataset1$hh_income_category) <- "Household Income"
+# label(new_dataset1$simp_marstat) <- "Marital Status"
+# label(new_dataset1$Alcohol_Use) <- "Alcohol Use"
+# label(new_dataset1$tob) <- "Tobacco Use"
+# label(new_dataset1$cancer) <- "Cancer Status"
+# label(new_dataset1$chronic) <- "Chronic Condition"
+# label(new_dataset1$anx_depr) <- "Anxiety and/or Depression"
+# label(new_dataset1$mj_use_past_year) <- "Marijuana use in the past year"
+# label(new_dataset1$cesd) <- "Depression Score (CES-D)"
+# 
+# # Creating Table 1 using new_dataset1
+# table1(
+#   ~ sex + race_eth + age_group + educ_cat + 
+#     hh_income_category + simp_marstat + Alcohol_Use + tob | cesd,
+#   data = new_dataset1,
+#   caption = "Table 1: Characteristics of Population by Depression Score (CES-D)"
+# )
 
 # By CESD only Binary ----
 new_dataset1 <- q6_clean[!is.na(q6_clean$depress_4), ]
@@ -536,67 +566,50 @@ label(new_dataset1$antidep) <- "Antidepressant Use"
 label(new_dataset1$age_group) <- "Age Group"
 label(new_dataset1$educ_cat) <- "Education Level"
 label(new_dataset1$hh_poverty) <- "Household Poverty Threshold"
-label(new_dataset1$simp_marstat) <- "Marital Status"
+# label(new_dataset1$simp_marstat) <- "Marital Status"
 label(new_dataset1$Alcohol_Use) <- "Alcohol Use"
 label(new_dataset1$tob) <- "Tobacco Use"
 label(new_dataset1$cancer) <- "Cancer Status"
-label(new_dataset1$chronic) <- "Chronic Condition"
+# label(new_dataset1$chronic) <- "Chronic Condition"
 label(new_dataset1$anx_depr) <- "Anxiety and/or Depression"
-label(new_dataset1$mj_use_past_year) <- "Marijuana use in the past year"
-label(new_dataset1$cesd) <- "Depression Score (CES-D)"
+label(new_dataset1$mj_use_combined) <- "Marijuana use in the past year"
+# label(new_dataset1$cesd) <- "Depression Score (CES-D)"
 
 # Creating Table 1 using new_dataset1
 table1(
-  ~ antidep + sex + race_eth + age_group + educ_cat + 
-    hh_poverty + simp_marstat + Alcohol_Use + tob | depress_4,
+  ~ antidep + sex + race_eth + age_group + educ_cat +
+    hh_poverty + Alcohol_Use + tob | depress_4,
   data = new_dataset1,
   caption = "Table 1: Characteristics of Population by Depression Score (CES-D)"
 )
 
 
-# Brian's Code ####
+# Regression Models ####
 
-## crude association with anxiety and depression ####
+## unadjusted association with anxiety and depression ####
 # need to categorize exposure/outcome as numbers
-df_anx_depr <- new_dataset1 %>%
+df_anx_depr <- q6_clean_labels %>%
   mutate(
     anx_depr_num = case_when(
       anx_depr == "None" ~ 0,
-      anx_depr == "Anxiety" ~ 1,
-      anx_depr == "Depression" ~ 2,
-      anx_depr == "Both Anxiety and Depression" ~ 3
+      anx_depr == "Depression" ~ 1,
+      anx_depr == "Depression and Anxiety" ~ 2
       ),
-    mj_use_past_year_num = case_when(
-      mj_use_past_year == "Not used in Past Year" ~ 0,
-      mj_use_past_year == "Use in Past Year" ~ 1
+    mj_use_combined_num = case_when(
+      mj_use_combined == "Not Used in Past Year" ~ 0,
+      mj_use_combined == "Use in Past Year" ~ 1
       )
     )
-#df_anx_depr$anx_depr_num <- relevel(factor(anx_depr_num), ref = "0")
-# df_anx_depr$mj_use_past_year_num <- relevel(factor(mj_use_past_year_num),ref="0")
-
-##unadjusted association - depression only - Nathan##
-# need to categorize exposure/outcome as numbers
-df_depr <- new_dataset %>%
-  mutate(
-    depr_num = case_when(
-      depress_4 == "Not Depressed" ~ 0,
-      depress_4 == "Depressed" ~ 1,
-    ),
-    mj_use_past_year_num = case_when(
-      mj_use_past_year == "Not used in Past Year" ~ 0,
-      mj_use_past_year == "Use in Past Year" ~ 1
-    )
-  )
 
 # factoring exposure and outcome
-df_depr <- df_depr %>%
+df_anx_depr <- df_anx_depr %>%
   mutate(
-    depr_num = relevel(factor(depr_num), ref = "0"),
-    mj_use_past_year_num <- relevel(factor(mj_use_past_year_num), ref = "0")
+    anx_depr_num = relevel(factor(anx_depr_num), ref = "0"),
+    mj_use_combined_num <- relevel(factor(mj_use_combined_num), ref = "0")
   )
 
-glm.crude <- glm(mj_use_past_year_num ~ depr_num, 
-                 data = df_depr, 
+glm.crude <- glm(mj_use_combined_num ~ anx_depr_num, 
+                 data = df_anx_depr, 
                  family = binomial())
 
 summary(glm.crude)
@@ -606,15 +619,29 @@ confint(glm.crude)
 exp(glm.crude$coefficients)
 exp(confint(glm.crude))
 
-# factoring exposure and outcome
-df_anx_depr <- df_anx_depr %>%
+## unadjusted association - depression only - Nathan####
+# need to categorize exposure/outcome as numbers
+df_depr <- new_dataset1 %>%
   mutate(
-    anx_depr_num = relevel(factor(anx_depr_num), ref = "0"),
-    mj_use_past_year_num <- relevel(factor(mj_use_past_year_num), ref = "0")
+    depr_num = case_when(
+      depress_4 == "Not Depressed" ~ 0,
+      depress_4 == "Depressed" ~ 1,
+    ),
+    mj_use_combined_num = case_when(
+      mj_use_combined == "Not Used in Past Year" ~ 0,
+      mj_use_combined == "Use in Past Year" ~ 1
+    )
   )
 
-glm.crude <- glm(mj_use_past_year_num ~ anx_depr_num, 
-                 data = df_anx_depr, 
+# # factoring exposure and outcome
+df_depr <- df_depr %>%
+  mutate(
+    depr_num = relevel(factor(depr_num), ref = "0"),
+    mj_use_combined_num <- relevel(factor(mj_use_combined_num), ref = "0")
+  )
+
+glm.crude <- glm(mj_use_combined_num ~ depr_num,
+                 data = df_depr,
                  family = binomial())
 
 summary(glm.crude)
@@ -633,14 +660,11 @@ df_anx_depr <- df_anx_depr %>%
       sex == "Female" ~ 1
     ),
     age_group_num = case_when(
-      age_group == "50-54 yrs" ~ 0,
-      age_group == "55-59 yrs" ~ 1,
-      age_group == "60-64 yrs" ~ 2,
-      age_group == "65-69 yrs" ~ 3,
-      age_group == "70-74 yrs" ~ 4,
-      age_group == "75-79 yrs" ~ 5,
-      age_group == "80-84 yrs" ~ 6,
-      age_group == "85+ yrs" ~ 7
+      age_group == "50-59" ~ 0,
+      age_group == "60-69" ~ 1,
+      age_group == "70-79" ~ 2,
+      age_group == "80-89" ~ 3,
+      age_group == "90+" ~ 4
     ),
     educ_cat_num = case_when(
       educ_cat == "Less than High School" ~ 0,
@@ -648,17 +672,9 @@ df_anx_depr <- df_anx_depr %>%
       educ_cat == "Some College" ~ 2,
       educ_cat == "College+" ~ 3
     ),
-    hh_income_category_num = case_when(
-      hh_income_category == "<19K" ~ 0,
-      hh_income_category == "19K-39,999" ~ 1,
-      hh_income_category == "40K-79,999" ~ 2,
-      hh_income_category == ">= 80K" ~ 3
-    ),
-    simp_marstat_num = case_when(
-      simp_marstat == "Married" ~ 0,
-      simp_marstat == "Never married" ~ 1,
-      simp_marstat == "Separated/divorced" ~ 2,
-      simp_marstat == "Widowed" ~ 3
+    hh_poverty_num = case_when(
+      hh_poverty == "Above poverty threshold" ~ 0, 
+      hh_poverty == "Below poverty threshold" ~ 1
     ),
     Alcohol_Use_num = case_when(
       Alcohol_Use == "Never drinkers" ~ 0,
@@ -671,33 +687,37 @@ df_anx_depr <- df_anx_depr %>%
       tob == "Former smokers" ~ 1,
       tob == "Light smokers (1-13 cigarettes/day)" ~ 2,
       tob == "Heavy smokers (>13 cigarettes)" ~ 3
+    ),
+    antidep_num = case_when(
+      antidep == "No" ~ 0,
+      antidep == "Yes" ~ 1
     )
   )
 
 # checking coding worked
-table(df_anx_depr$sex_num)
-table(df_anx_depr$age_group_num)
-table(df_anx_depr$educ_cat_num)
-table(df_anx_depr$hh_income_category_num)
-table(df_anx_depr$simp_marstat_num)
-table(df_anx_depr$Alcohol_Use_num)
-table(df_anx_depr$tob_num)
+table(df_anx_depr$sex_num, exclude = NULL)
+table(df_anx_depr$age_group_num, exclude = NULL)
+table(df_anx_depr$educ_cat_num, exclude = NULL)
+table(df_anx_depr$hh_poverty_num, exclude = NULL)
+table(df_anx_depr$Alcohol_Use_num, exclude = NULL)
+table(df_anx_depr$tob_num, exclude = NULL)
+table(df_anx_depr$antidep_num, exclude = NULL)
 
 # factoring covariates
 df_anx_depr <- df_anx_depr %>%
   mutate(
     sex_num = relevel(factor(sex_num), ref = "0"),
-    age_group_num <- relevel(factor(age_group_num), ref = "3"),
-    educ_cat_num <- relevel(factor(educ_cat_num), ref = "3"),
-    hh_income_category_num <- relevel(factor(hh_income_category_num), ref = "2"),
-    simp_marstat_num <- relevel(factor(simp_marstat_num), ref = "0"),
-    Alcohol_Use_num <- relevel(factor(Alcohol_Use_num), ref = "0"),
-    tob_num <- relevel(factor(tob_num), ref = "0")
+    age_group_num = relevel(factor(age_group_num), ref = "2"),
+    educ_cat_num = relevel(factor(educ_cat_num), ref = "1"),
+    hh_poverty_num = relevel(factor(hh_poverty_num), ref = "0"),
+    Alcohol_Use_num = relevel(factor(Alcohol_Use_num), ref = "0"),
+    tob_num = relevel(factor(tob_num), ref = "0"),
+    antidep_num = relevel(factor(antidep_num), ref = "0")
   )
 
 
-glm.adjusted <- glm(mj_use_past_year_num ~ anx_depr_num + 
-                      sex_num + age_group_num + educ_cat_num + hh_income_category_num + simp_marstat_num + Alcohol_Use_num + tob_num, 
+glm.adjusted <- glm(mj_use_combined_num ~ anx_depr_num + 
+                      sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num + antidep_num, 
                     data = df_anx_depr, 
                     family = binomial())
 
@@ -708,13 +728,79 @@ confint(glm.adjusted)
 exp(glm.adjusted$coefficients)
 exp(confint(glm.adjusted))
 
+## adjusted association with anxiety and depression ####
+# need to categorize covariates as numeric
+df_depr <- df_depr %>%
+  mutate(
+    sex_num = case_when(
+      sex == "Male" ~ 0,
+      sex == "Female" ~ 1
+    ),
+    age_group_num = case_when(
+      age_group == "50-59" ~ 0,
+      age_group == "60-69" ~ 1,
+      age_group == "70-79" ~ 2,
+      age_group == "80-89" ~ 3,
+      age_group == "90+" ~ 4
+    ),
+    educ_cat_num = case_when(
+      educ_cat == "Less than High School" ~ 0,
+      educ_cat == "High School/GED" ~ 1,
+      educ_cat == "Some College" ~ 2,
+      educ_cat == "College+" ~ 3
+    ),
+    hh_poverty_num = case_when(
+      hh_poverty == "Above poverty threshold" ~ 0, 
+      hh_poverty == "Below poverty threshold" ~ 1
+    ),
+    Alcohol_Use_num = case_when(
+      Alcohol_Use == "Never drinkers" ~ 0,
+      Alcohol_Use == "Former drinkers" ~ 1,
+      Alcohol_Use == "Low to moderate drinkers" ~ 2,
+      Alcohol_Use == "Heavy drinkers" ~ 3
+    ),
+    tob_num = case_when(
+      tob == "Non-smokers" ~ 0,
+      tob == "Former smokers" ~ 1,
+      tob == "Light smokers (1-13 cigarettes/day)" ~ 2,
+      tob == "Heavy smokers (>13 cigarettes)" ~ 3
+    ),
+    antidep_num = case_when(
+      antidep == "No" ~ 0,
+      antidep == "Yes" ~ 1
+    )
+  )
 
-## updated table 1 ####
-table1(
-  ~ sex + race_eth + age_group + educ_cat + 
-    hh_income_category + simp_marstat + Alcohol_Use + tob | anx_depr,
-  data = df_anx_depr,
-  caption = "Table 1: Characteristics of Population by Anxiety and/or Depression"
-)
+# checking coding worked
+table(df_depr$sex_num, exclude = NULL)
+table(df_depr$age_group_num, exclude = NULL)
+table(df_depr$educ_cat_num, exclude = NULL)
+table(df_depr$hh_poverty_num, exclude = NULL)
+table(df_depr$Alcohol_Use_num, exclude = NULL)
+table(df_depr$tob_num, exclude = NULL)
+table(df_depr$antidep_num, exclude = NULL)
+
+# factoring covariates
+df_depr <- df_depr %>%
+  mutate(
+    sex_num = relevel(factor(sex_num), ref = "0"),
+    age_group_num = relevel(factor(age_group_num), ref = "2"),
+    educ_cat_num = relevel(factor(educ_cat_num), ref = "1"),
+    hh_poverty_num = relevel(factor(hh_poverty_num), ref = "0"),
+    Alcohol_Use_num = relevel(factor(Alcohol_Use_num), ref = "0"),
+    tob_num = relevel(factor(tob_num), ref = "0"),
+    antidep_num = relevel(factor(antidep_num), ref = "0")
+  )
 
 
+glm.adjusted <- glm(mj_use_combined_num ~ depr_num + 
+                      sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num + antidep_num, 
+                    data = df_depr, 
+                    family = binomial())
+
+summary(glm.adjusted)
+glm.adjusted$coefficients
+confint(glm.adjusted)
+# To get the effect, we need to exponentiate the coefficients
+exp(glm.adjusted$coefficients)
+exp(confint(glm.adjusted))
