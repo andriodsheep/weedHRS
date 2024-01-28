@@ -4,7 +4,7 @@ library(tidyverse)
 library(table1)
 library(Hmisc)
 
-####DATA MERGING AND CLEANING
+####DATA MERGING AND CLEANING----
 
 #Weed Data from 2020 Module 10
 weed2020 <- read_sas("module10_data.sas7bdat")
@@ -66,7 +66,7 @@ table(weed_merge_clean$QV402)
 table(q6_data_complete$mj_use_mod10)
 table(weed_merge_clean$mj_use_mod10)
 
-#Write Another CSV file that contains only weed HHIDPN
+#Write Another CSV file that contains only weed HHIDPN----
 write.csv(weed_merge_clean, "weed_merged")
 merged_data <- read.csv("weed_merged")
 
@@ -297,12 +297,16 @@ table(q6_clean$educ_cat)
 q6_clean$hh_poverty <- ifelse(q6_clean$mj_year == 2018, q6_clean$hh_poverty_18,
                               ifelse(q6_clean$mj_year == 2020, q6_clean$hh_poverty_20, NA))
 
+q6_clean$hh_poverty[is.na(q6_clean$hh_poverty)] <- 0
+
 q6_clean$hh_poverty <- factor(
   q6_clean$hh_poverty,
   levels = c(0, 1),
   labels = c("Above poverty threshold", "Below poverty threshold")
 )
+
 table(q6_clean$hh_poverty)
+
 
 ##Alcohol Use----
 #2018
@@ -413,9 +417,12 @@ table(q6_clean$antidep_20)
 
 #antidepressant use for regressions
 q6_clean$antidep <- ifelse(q6_clean$mj_year == 2018, q6_clean$antidep_18,
-                           ifelse(q6_clean$mj_year == 2020, q6_clean$antidep_20, NA))
+                           ifelse(q6_clean$mj_year == 2020, q6_clean$antidep_20, "Yes"))
 
-#factor with levels 1 and 5, and labels "Yes" and "No"
+q6_clean$antidep[is.na(q6_clean$antidep)] <- 5
+q6_clean$antidep[q6_clean$antidep != 1] <- 5  # set anything other than 1 to 5
+
+#factor with levels 1 and 5, and labels yes or no
 q6_clean$antidep <- factor(q6_clean$antidep, levels = c(1, 5), labels = c("Yes", "No"))
 
 table(q6_clean$antidep)
@@ -425,11 +432,7 @@ table(q6_clean$antidep)
 
 #Dropping NAs from variables in Table 1
 q6_clean <- q6_clean[q6_clean$age >= 50, ] # age
-
-# tob, race, education, maritial status, poverty
-# q6_clean <- q6_clean[complete.cases(q6_clean[c("tob", "race_eth", "educ_cat", "simp_marstat", "hh_poverty", "antidep")]), ]
-
-# q6_clean <- q6_clean[complete.cases(q6_clean[c("tob", "race_eth", "educ_cat", "hh_poverty", "antidep")]), ]
+q6_clean <- q6_clean[complete.cases(q6_clean[c("race_eth", "educ_cat")]), ] #race and education
 
 
 #Summary Statistics----
