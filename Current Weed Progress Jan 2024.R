@@ -4,6 +4,8 @@ library(tidyverse)
 library(table1)
 library(Hmisc)
 
+setwd("C:/Users/nfinney/OneDrive - Boston University/Documents/EP816/Weed data")
+
 ####DATA MERGING AND CLEANING----
 
 #Weed Data from 2020 Module 10
@@ -255,6 +257,7 @@ q6_clean <- q6_clean %>%
     depress_4 == "Depressed" & anx_12 == "Anxious" ~ 3
     )) %>%
   mutate(anx_depr = factor(anx_depr, levels = c(1, 2, 3), labels = c("None", "Depression", "Depression and Anxiety")))
+table(q6_clean$anx_depr)
 
 
 ###Confounders
@@ -589,6 +592,7 @@ table1(
 
 # Regression Models ####
 
+
 ## unadjusted association with anxiety and depression ####
 # need to categorize exposure/outcome as numbers
 df_anx_depr <- q6_clean_labels %>%
@@ -622,37 +626,40 @@ confint(glm.crude)
 exp(glm.crude$coefficients)
 exp(confint(glm.crude))
 
+table(df_anx_depr$anx_depr, df_anx_depr$mj_use_combined)
+
+
 ## unadjusted association - depression only - Nathan####
 # need to categorize exposure/outcome as numbers
-df_depr <- new_dataset1 %>%
-  mutate(
-    depr_num = case_when(
-      depress_4 == "Not Depressed" ~ 0,
-      depress_4 == "Depressed" ~ 1,
-    ),
-    mj_use_combined_num = case_when(
-      mj_use_combined == "Not Used in Past Year" ~ 0,
-      mj_use_combined == "Use in Past Year" ~ 1
-    )
-  )
-
-# # factoring exposure and outcome
-df_depr <- df_depr %>%
-  mutate(
-    depr_num = relevel(factor(depr_num), ref = "0"),
-    mj_use_combined_num <- relevel(factor(mj_use_combined_num), ref = "0")
-  )
-
-glm.crude <- glm(mj_use_combined_num ~ depr_num,
-                 data = df_depr,
-                 family = binomial())
-
-summary(glm.crude)
-glm.crude$coefficients
-confint(glm.crude)
-# To get the effect, we need to exponentiate the coefficients
-exp(glm.crude$coefficients)
-exp(confint(glm.crude))
+# df_depr <- new_dataset1 %>%
+#   mutate(
+#     depr_num = case_when(
+#       depress_4 == "Not Depressed" ~ 0,
+#       depress_4 == "Depressed" ~ 1,
+#     ),
+#     mj_use_combined_num = case_when(
+#       mj_use_combined == "Not Used in Past Year" ~ 0,
+#       mj_use_combined == "Use in Past Year" ~ 1
+#     )
+#   )
+# 
+# # # factoring exposure and outcome
+# df_depr <- df_depr %>%
+#   mutate(
+#     depr_num = relevel(factor(depr_num), ref = "0"),
+#     mj_use_combined_num <- relevel(factor(mj_use_combined_num), ref = "0")
+#   )
+# 
+# glm.crude <- glm(mj_use_combined_num ~ depr_num,
+#                  data = df_depr,
+#                  family = binomial())
+# 
+# summary(glm.crude)
+# glm.crude$coefficients
+# confint(glm.crude)
+# # To get the effect, we need to exponentiate the coefficients
+# exp(glm.crude$coefficients)
+# exp(confint(glm.crude))
 
 ## adjusted association with anxiety and depression ####
 # need to categorize covariates as numeric
@@ -694,6 +701,12 @@ df_anx_depr <- df_anx_depr %>%
     antidep_num = case_when(
       antidep == "No" ~ 0,
       antidep == "Yes" ~ 1
+    ),
+    race_eth_num = case_when(
+      race_eth == "White non-hispanic" ~ 0,
+      race_eth == "Black non-hispanic" ~ 1,
+      race_eth == "Hispanic" ~ 2,
+      race_eth == "Other non-hispanic" ~ 3
     )
   )
 
@@ -705,6 +718,7 @@ table(df_anx_depr$hh_poverty_num, exclude = NULL)
 table(df_anx_depr$Alcohol_Use_num, exclude = NULL)
 table(df_anx_depr$tob_num, exclude = NULL)
 table(df_anx_depr$antidep_num, exclude = NULL)
+
 
 # factoring covariates
 df_anx_depr <- df_anx_depr %>%
@@ -731,7 +745,9 @@ confint(glm.adjusted)
 exp(glm.adjusted$coefficients)
 exp(confint(glm.adjusted))
 
-## adjusted association with anxiety and depression ####
+
+
+## adjusted association with depression only ####
 # need to categorize covariates as numeric
 df_depr <- df_depr %>%
   mutate(
@@ -771,6 +787,12 @@ df_depr <- df_depr %>%
     antidep_num = case_when(
       antidep == "No" ~ 0,
       antidep == "Yes" ~ 1
+    ),
+    race_eth_num = case_when(
+      race_eth == "White non-hispanic" ~ 0,
+      race_eth == "Black non-hispanic" ~ 1,
+      race_eth == "Hispanic" ~ 2,
+      race_eth == "Other non-hispanic" ~ 3
     )
   )
 
@@ -782,6 +804,7 @@ table(df_depr$hh_poverty_num, exclude = NULL)
 table(df_depr$Alcohol_Use_num, exclude = NULL)
 table(df_depr$tob_num, exclude = NULL)
 table(df_depr$antidep_num, exclude = NULL)
+table(df_depr$race_eth_num, exclude = NULL)
 
 # factoring covariates
 df_depr <- df_depr %>%
@@ -792,14 +815,17 @@ df_depr <- df_depr %>%
     hh_poverty_num = relevel(factor(hh_poverty_num), ref = "0"),
     Alcohol_Use_num = relevel(factor(Alcohol_Use_num), ref = "0"),
     tob_num = relevel(factor(tob_num), ref = "0"),
-    antidep_num = relevel(factor(antidep_num), ref = "0")
+    antidep_num = relevel(factor(antidep_num), ref = "0"),
+    race_eth_num = relevel(factor(race_eth_num), ref = "0")
   )
 
 
-glm.adjusted <- glm(mj_use_combined_num ~ depr_num + 
-                      sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num + antidep_num, 
+##testing for interaction
+glm.adjusted <- glm(mj_use_combined_num ~ depr_num + depr_num*antidep_num +
+                      sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num, 
                     data = df_depr, 
                     family = binomial())
+
 
 summary(glm.adjusted)
 glm.adjusted$coefficients
@@ -807,3 +833,164 @@ confint(glm.adjusted)
 # To get the effect, we need to exponentiate the coefficients
 exp(glm.adjusted$coefficients)
 exp(confint(glm.adjusted))
+
+##no antidepressants unadjusted regression
+df_depr_noantidep <- subset(df_depr, df_depr$antidep_num == 0)
+
+glm.crude_noantidep <- glm(mj_use_combined_num ~ depr_num, 
+                              data = df_depr_noantidep, 
+                              family = binomial())
+
+
+summary(glm.crude_noantidep)
+glm.crude_noantidep$coefficients
+confint(glm.crude_noantidep)
+# To get the effect, we need to exponentiate the coefficients
+exp(glm.crude_noantidep$coefficients)
+exp(confint(glm.crude_noantidep))
+
+table(df_depr_noantidep$depr_num, df_depr_noantidep$mj_use_combined)
+
+##no antidepressants adjusted regression
+df_depr_noantidep <- subset(df_depr, df_depr$antidep_num == 0)
+
+glm.adjusted_noantidep <- glm(mj_use_combined_num ~ depr_num + 
+                      sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num, 
+                    data = df_depr_noantidep, 
+                    family = binomial())
+
+
+summary(glm.adjusted_noantidep)
+glm.adjusted_noantidep$coefficients
+confint(glm.adjusted_noantidep)
+# To get the effect, we need to exponentiate the coefficients
+exp(glm.adjusted_noantidep$coefficients)
+exp(confint(glm.adjusted_noantidep))
+
+
+##antidepressants unadjusted regression
+df_depr_antidep <- subset(df_depr, df_depr$antidep_num == 1)
+
+glm.crude_antidep <- glm(mj_use_combined_num ~ depr_num, 
+                                    data = df_depr_antidep, 
+                                    family = binomial())
+
+
+summary(glm.crude_antidep)
+glm.crude_antidep$coefficients
+confint(glm.crude_antidep)
+# To get the effect, we need to exponentiate the coefficients
+exp(glm.crude_antidep$coefficients)
+exp(confint(glm.crude_antidep))
+
+table(df_depr_antidep$depr_num, df_depr_antidep$mj_use_combined)
+
+##no antidepressants adjusted regression
+glm.adjusted_antidep <- glm(mj_use_combined_num ~ depr_num + 
+                                sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num, 
+                              data = df_depr_antidep, 
+                              family = binomial())
+
+
+summary(glm.adjusted_antidep)
+glm.adjusted_antidep$coefficients
+confint(glm.adjusted_antidep)
+# To get the effect, we need to exponentiate the coefficients
+exp(glm.adjusted_antidep$coefficients)
+exp(confint(glm.adjusted_antidep))
+
+
+##white non-hispanic unadjusted regression
+df_depr_white <- subset(df_depr, df_depr$race_eth_num == 0)
+
+glm.crude_white <- glm(mj_use_combined_num ~ depr_num, 
+                         data = df_depr_white, 
+                         family = binomial())
+
+
+summary(glm.crude_white)
+glm.crude_white$coefficients
+confint(glm.crude_white)
+# To get the effect, we need to exponentiate the coefficients
+exp(glm.crude_white$coefficients)
+exp(confint(glm.crude_white))
+
+table(df_depr_white$depr_num, df_depr_white$mj_use_combined)
+
+##white non-hispanic adjusted regression
+glm.adjusted_white <- glm(mj_use_combined_num ~ depr_num + 
+                              sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num, 
+                            data = df_depr_white, 
+                            family = binomial())
+
+
+summary(glm.adjusted_white)
+glm.adjusted_white$coefficients
+confint(glm.adjusted_white)
+# To get the effect, we need to exponentiate the coefficients
+exp(glm.adjusted_white$coefficients)
+exp(confint(glm.adjusted_white))
+
+##black non-hispanic unadjusted regression
+df_depr_black <- subset(df_depr, df_depr$race_eth_num == 1)
+
+glm.crude_black <- glm(mj_use_combined_num ~ depr_num, 
+                       data = df_depr_black, 
+                       family = binomial())
+
+
+summary(glm.crude_black)
+glm.crude_black$coefficients
+confint(glm.crude_black)
+# To get the effect, we need to exponentiate the coefficients
+exp(glm.crude_black$coefficients)
+exp(confint(glm.crude_black))
+
+table(df_depr_black$depr_num, df_depr_black$mj_use_combined)
+
+
+##black non-hispanic adjusted regression
+glm.adjusted_black <- glm(mj_use_combined_num ~ depr_num + 
+                            sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num, 
+                          data = df_depr_black, 
+                          family = binomial())
+
+
+summary(glm.adjusted_black)
+glm.adjusted_black$coefficients
+confint(glm.adjusted_black)
+# To get the effect, we need to exponentiate the coefficients
+exp(glm.adjusted_black$coefficients)
+exp(confint(glm.adjusted_black))
+
+##Hispanic unadjusted regression
+df_depr_hispanic <- subset(df_depr, df_depr$race_eth_num == 2)
+
+glm.crude_hispanic <- glm(mj_use_combined_num ~ depr_num, 
+                       data = df_depr_hispanic, 
+                       family = binomial())
+
+
+summary(glm.crude_hispanic)
+glm.crude_hispanic$coefficients
+confint(glm.crude_hispanic)
+# To get the effect, we need to exponentiate the coefficients
+exp(glm.crude_hispanic$coefficients)
+exp(confint(glm.crude_hispanic))
+
+table(df_depr_hispanic$depr_num, df_depr_hispanic$mj_use_combined)
+
+##Hispanic adjusted regression
+glm.adjusted_hispanic <- glm(mj_use_combined_num ~ depr_num + 
+                            sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num, 
+                          data = df_depr_hispanic, 
+                          family = binomial())
+
+
+summary(glm.adjusted_hispanic)
+glm.adjusted_hispanic$coefficients
+confint(glm.adjusted_hispanic)
+# To get the effect, we need to exponentiate the coefficients
+exp(glm.adjusted_hispanic$coefficients)
+exp(confint(glm.adjusted_hispanic))
+
