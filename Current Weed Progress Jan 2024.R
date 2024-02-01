@@ -945,7 +945,7 @@ table(df_depr_white$depr_num, df_depr_white$mj_use_combined)
 
 ##white non-hispanic adjusted regression
 glm.adjusted_white <- glm(mj_use_combined_num ~ depr_num + 
-                              sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num + cancer_num, 
+                              sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num + cancer_num + mj_year_num, 
                             data = df_depr_white, 
                             family = binomial())
 
