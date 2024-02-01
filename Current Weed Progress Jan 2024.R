@@ -72,12 +72,12 @@ merged_data <- read.csv("weed_merged")
 
 #drop all unused variables
 q6_clean = subset(merged_data, select = c(X, HHIDPN, RAGENDER, R14AGEY_B, R15AGEY_B, RAEDUC, H14INPOV, H15INPOV, 
-                                             QC128, QC129, QC130, RC128, RC129, RC130, 
-                                             QC116, QC117, QC118, RC116, RC117, RC118, 
-                                             R14CANCR, R15CANCR, QN365, RN365, RARACEM, RAHISPAN,
-                                             R14CESD, R15CESD, NLB041A, NLB041B, NLB041C, NLB041D, NLB041E,
-                                             QLB035C1, QLB035C2, QLB035C3, QLB035C4, QLB035C5,
-                                             RLB035C1, RLB035C2, RLB035C3, RLB035C4, RLB035C5, QV402, QV403, mj_use_mod10))
+                                          QC128, QC129, QC130, RC128, RC129, RC130, 
+                                          R14SMOKEV, R14SMOKEN, R15SMOKEV, R15SMOKEN, 
+                                          R14CANCR, R15CANCR, QN365, RN365, RARACEM, RAHISPAN,
+                                          R14CESD, R15CESD, NLB041A, NLB041B, NLB041C, NLB041D, NLB041E,
+                                          QLB035C1, QLB035C2, QLB035C3, QLB035C4, QLB035C5,
+                                          RLB035C1, RLB035C2, RLB035C3, RLB035C4, RLB035C5, QV402, QV403, mj_use_mod10))
 
 #rename remaining variables
 q6_clean <- q6_clean %>%
@@ -94,12 +94,10 @@ q6_clean <- q6_clean %>%
          "alc_ever_20" = "RC128",
          "alc_daywk_20" = "RC129",
          "alc_drinkday_20" = "RC130",
-         "tob_ever_18" = "QC116",
-         "tob_cur_18" = "QC117",
-         "tob_cigday_18" = "QC118",
-         "tob_ever_20" = "RC116",
-         "tob_cur_20" = "RC117",
-         "tob_cigday_20" = "RC118",
+         "tob_ever_18" = "R14SMOKEV",
+         "tob_cur_18" = "R14SMOKEN",
+         "tob_ever_20" = "R15SMOKEV",
+         "tob_cur_20" = "R15SMOKEN",
          "cancer_18" = "R14CANCR",
          "cancer_20" = "R15CANCR",
          "antidep_18" = "QN365",
@@ -150,6 +148,14 @@ q6_clean <- q6_clean %>%
     mj_year = ifelse(!is.na(mj_use_mod10), "2020", "2018")
   )
 table(q6_clean$mj_year)
+
+q6_clean <- q6_clean %>%
+  mutate(
+    mj_year_f = factor(if_else(mj_year == 2020, 1, 0), 
+                       levels = c(0, 1), 
+                       labels = c("2018", "2020"))
+  )
+
 
 ###Exposures
 
@@ -273,8 +279,8 @@ q6_clean$age <- ifelse(q6_clean$mj_year == 2018, q6_clean$age_18,
 #create groups
 q6_clean$age_group <- cut(
   q6_clean$age,
-  breaks = c(49, 59, 69, 79, 89, Inf),
-  labels = c("50-59", "60-69", "70-79", "80-89", "90+"),
+  breaks = c(49, 59, 69, 79, Inf),
+  labels = c("50-59", "60-69", "70-79", "80+"),
   right = FALSE
 )
 
@@ -343,21 +349,22 @@ table(q6_clean$Alcohol_Use)
 #2018
 q6_clean <- q6_clean %>%
   mutate(tob_18 = case_when(
-    q6_clean$tob_cur_18 == 1 & q6_clean$tob_cigday_18 > 13 ~ 4,
-    q6_clean$tob_cur_18 == 1 & q6_clean$tob_cigday_18 <= 13 ~ 3,
-    q6_clean$tob_cur_18 == 5 & q6_clean$tob_ever_18 == 1 ~ 2,
-    q6_clean$tob_cur_18 == 5 | q6_clean$tob_ever_18 == 5 ~ 1
+    q6_clean$tob_cur_18 == 1 ~ 3,
+    q6_clean$tob_cur_18 == 0 & q6_clean$tob_ever_18 == 1 ~ 2,
+    q6_clean$tob_cur_18 == 0 & q6_clean$tob_ever_18 == 0 ~ 1
   ))
-table(q6_clean$tob)
+
+
+table(q6_clean$tob_18)
 
 #2020
 q6_clean <- q6_clean %>%
   mutate(tob_20 = case_when(
-    q6_clean$tob_cur_20 == 1 & q6_clean$tob_cigday_20 > 13 ~ 4,
-    q6_clean$tob_cur_20 == 1 & q6_clean$tob_cigday_20 <= 13 ~ 3,
-    q6_clean$tob_cur_20 == 5 & q6_clean$tob_ever_20 == 1 ~ 2,
-    q6_clean$tob_cur_20 == 5 | q6_clean$tob_ever_20 == 5 ~ 1
+    q6_clean$tob_cur_20 == 1 ~ 3,
+    q6_clean$tob_cur_20 == 0 & q6_clean$tob_ever_20 == 1 ~ 2,
+    q6_clean$tob_cur_20 == 0 & q6_clean$tob_ever_20 == 0 ~ 1
   ))
+
 table(q6_clean$tob_20)
 
 #tobacco for regressions
@@ -366,20 +373,25 @@ q6_clean$tob <- ifelse(q6_clean$mj_year == 2018, q6_clean$tob_18,
 
 
 q6_clean$tob <- factor(q6_clean$tob, 
-                       levels = c(1, 2, 3, 4), 
+                       levels = c(1, 2, 3), 
                        labels = c("Non-smokers", 
                                   "Former smokers", 
-                                  "Light smokers (1-13 cigarettes/day)", 
-                                  "Heavy smokers (>13 cigarettes)"))
+                                  "Current smokers"))
 
 table(q6_clean$tob)
 
 ##Cancer----
-#Look at data dictionary CAN'T FIND ON HRS
 q6_clean$cancer_18 <- factor(q6_clean$cancer_18)
 q6_clean$cancer_20 <- factor(q6_clean$cancer_20)
 q6_clean$cancer <- ifelse(q6_clean$mj_year == 2018, q6_clean$cancer_18,
                           ifelse(q6_clean$mj_year == 2020, q6_clean$cancer_20, NA))
+
+q6_clean$cancer <- factor(q6_clean$cancer, 
+                       levels = c(1, 2), 
+                       labels = c("No cancer", 
+                                  "Cancer"))
+
+
 table(q6_clean$cancer)
 
 
@@ -433,7 +445,7 @@ table(q6_clean$antidep)
 
 #Dropping NAs from variables in Table 1
 q6_clean <- q6_clean[q6_clean$age >= 50, ] # age
-q6_clean <- q6_clean[complete.cases(q6_clean[c("race_eth", "educ_cat")]), ] #race and education
+q6_clean <- q6_clean[complete.cases(q6_clean[c("race_eth", "educ_cat", "hh_poverty", "tob", "cancer")]), ] #race and education
 
 
 #Summary Statistics----
@@ -511,7 +523,6 @@ label(q6_clean_labels$cancer) <- "Cancer Status"
 # label(q6_clean_labels$chronic) <- "Chronic Condition"
 label(q6_clean_labels$anx_depr) <- "Anxiety and/or Depression"
 label(q6_clean_labels$antidep) <- "Antidepressant Use"
-# label(q6_clean_labels$cancer) <- "Cancer Status"
 label(q6_clean_labels$mj_use_combined) <- "Marijuana use in the past year"
 
 # Creating Table 1 using q6_clean_labels
@@ -525,7 +536,7 @@ label(q6_clean_labels$mj_use_combined) <- "Marijuana use in the past year"
 
 table1(
   ~ sex + race_eth + age_group + educ_cat + 
-    hh_poverty + Alcohol_Use + tob + antidep | anx_depr,
+    hh_poverty + Alcohol_Use + tob + cancer + antidep | anx_depr,
   data = q6_clean_labels,
   caption = "Table 1: Characteristics of Population by Anxiety and/or Depression"
 )
@@ -533,32 +544,29 @@ table1(
 
 
 # By CESD only ----
-# new_dataset1 <- q6_clean[!is.na(q6_clean$cesd), ]
-# new_dataset1$cesd <- as.factor(new_dataset1$cesd)
-# 
-# label(new_dataset1$sex) <- "Sex"
-# label(new_dataset1$race_eth) <- "Race/Ethnicity"
-# label(new_dataset1$antidep) <- "Antidepressant Use"
-# label(new_dataset1$region) <- "Geographic Region"
-# label(new_dataset1$age_group) <- "Age Group"
-# label(new_dataset1$educ_cat) <- "Education Level"
-# label(new_dataset1$hh_income_category) <- "Household Income"
-# label(new_dataset1$simp_marstat) <- "Marital Status"
-# label(new_dataset1$Alcohol_Use) <- "Alcohol Use"
-# label(new_dataset1$tob) <- "Tobacco Use"
-# label(new_dataset1$cancer) <- "Cancer Status"
-# label(new_dataset1$chronic) <- "Chronic Condition"
-# label(new_dataset1$anx_depr) <- "Anxiety and/or Depression"
-# label(new_dataset1$mj_use_past_year) <- "Marijuana use in the past year"
-# label(new_dataset1$cesd) <- "Depression Score (CES-D)"
-# 
-# # Creating Table 1 using new_dataset1
-# table1(
-#   ~ sex + race_eth + age_group + educ_cat + 
-#     hh_income_category + simp_marstat + Alcohol_Use + tob | cesd,
-#   data = new_dataset1,
-#   caption = "Table 1: Characteristics of Population by Depression Score (CES-D)"
-# )
+new_dataset1 <- q6_clean[!is.na(q6_clean$cesd), ]
+new_dataset1$cesd <- as.factor(new_dataset1$cesd)
+
+label(new_dataset1$sex) <- "Sex"
+label(new_dataset1$race_eth) <- "Race/Ethnicity"
+label(new_dataset1$antidep) <- "Antidepressant Use"
+label(new_dataset1$age_group) <- "Age Group"
+label(new_dataset1$educ_cat) <- "Education Level"
+label(new_dataset1$hh_poverty) <- "Poverty Status"
+label(new_dataset1$Alcohol_Use) <- "Alcohol Use"
+label(new_dataset1$tob) <- "Tobacco Use"
+label(new_dataset1$cancer) <- "Cancer Status"
+label(new_dataset1$anx_depr) <- "Anxiety and/or Depression"
+label(new_dataset1$mj_use_combined) <- "Marijuana use in the past year"
+label(new_dataset1$cesd) <- "Depression Score (CES-D)"
+
+# Creating Table 1 using new_dataset1
+table1(
+  ~ sex + race_eth + age_group + educ_cat +
+    hh_income_category + simp_marstat + Alcohol_Use + tob | cesd,
+  data = new_dataset1,
+  caption = "Table 1: Characteristics of Population by Depression Score (CES-D)"
+)
 
 # By CESD only Binary ----
 new_dataset1 <- q6_clean[!is.na(q6_clean$depress_4), ]
@@ -627,37 +635,37 @@ exp(confint(glm.crude))
 table(df_anx_depr$anx_depr, df_anx_depr$mj_use_combined)
 
 
-## unadjusted association - depression only - Nathan####
-# need to categorize exposure/outcome as numbers
-# df_depr <- new_dataset1 %>%
-#   mutate(
-#     depr_num = case_when(
-#       depress_4 == "Not Depressed" ~ 0,
-#       depress_4 == "Depressed" ~ 1,
-#     ),
-#     mj_use_combined_num = case_when(
-#       mj_use_combined == "Not Used in Past Year" ~ 0,
-#       mj_use_combined == "Use in Past Year" ~ 1
-#     )
-#   )
-# 
-# # # factoring exposure and outcome
-# df_depr <- df_depr %>%
-#   mutate(
-#     depr_num = relevel(factor(depr_num), ref = "0"),
-#     mj_use_combined_num <- relevel(factor(mj_use_combined_num), ref = "0")
-#   )
-# 
-# glm.crude <- glm(mj_use_combined_num ~ depr_num,
-#                  data = df_depr,
-#                  family = binomial())
-# 
-# summary(glm.crude)
-# glm.crude$coefficients
-# confint(glm.crude)
-# # To get the effect, we need to exponentiate the coefficients
-# exp(glm.crude$coefficients)
-# exp(confint(glm.crude))
+# unadjusted association - depression only - Nathan####
+#need to categorize exposure/outcome as numbers
+df_depr <- new_dataset1 %>%
+  mutate(
+    depr_num = case_when(
+      depress_4 == "Not Depressed" ~ 0,
+      depress_4 == "Depressed" ~ 1,
+    ),
+    mj_use_combined_num = case_when(
+      mj_use_combined == "Not Used in Past Year" ~ 0,
+      mj_use_combined == "Use in Past Year" ~ 1
+    )
+  )
+
+# # factoring exposure and outcome
+df_depr <- df_depr %>%
+  mutate(
+    depr_num = relevel(factor(depr_num), ref = "0"),
+    mj_use_combined_num <- relevel(factor(mj_use_combined_num), ref = "0")
+  )
+
+glm.crude <- glm(mj_use_combined_num ~ depr_num,
+                 data = df_depr,
+                 family = binomial())
+
+summary(glm.crude)
+glm.crude$coefficients
+confint(glm.crude)
+# To get the effect, we need to exponentiate the coefficients
+exp(glm.crude$coefficients)
+exp(confint(glm.crude))
 
 ## adjusted association with anxiety and depression ####
 # need to categorize covariates as numeric
@@ -671,8 +679,7 @@ df_anx_depr <- df_anx_depr %>%
       age_group == "50-59" ~ 0,
       age_group == "60-69" ~ 1,
       age_group == "70-79" ~ 2,
-      age_group == "80-89" ~ 3,
-      age_group == "90+" ~ 4
+      age_group == "80+" ~ 3,
     ),
     educ_cat_num = case_when(
       educ_cat == "Less than High School" ~ 0,
@@ -693,12 +700,19 @@ df_anx_depr <- df_anx_depr %>%
     tob_num = case_when(
       tob == "Non-smokers" ~ 0,
       tob == "Former smokers" ~ 1,
-      tob == "Light smokers (1-13 cigarettes/day)" ~ 2,
-      tob == "Heavy smokers (>13 cigarettes)" ~ 3
+      tob == "Current smokers" ~ 2,
+    ),
+    cancer_num = case_when(
+      cancer == "No cancer" ~ 0,
+      cancer == "Cancer" ~ 1
     ),
     antidep_num = case_when(
       antidep == "No" ~ 0,
       antidep == "Yes" ~ 1
+    ),
+    mj_year_num = case_when(
+      mj_year == 2018 ~ 0,
+      mj_year == 2020 ~ 1
     ),
     race_eth_num = case_when(
       race_eth == "White non-hispanic" ~ 0,
@@ -715,6 +729,8 @@ table(df_anx_depr$educ_cat_num, exclude = NULL)
 table(df_anx_depr$hh_poverty_num, exclude = NULL)
 table(df_anx_depr$Alcohol_Use_num, exclude = NULL)
 table(df_anx_depr$tob_num, exclude = NULL)
+table(df_anx_depr$cancer_num, exclude = NULL)
+table(df_anx_depr$mj_year_num, exclude = NULL)
 table(df_anx_depr$antidep_num, exclude = NULL)
 
 
@@ -727,12 +743,14 @@ df_anx_depr <- df_anx_depr %>%
     hh_poverty_num = relevel(factor(hh_poverty_num), ref = "0"),
     Alcohol_Use_num = relevel(factor(Alcohol_Use_num), ref = "0"),
     tob_num = relevel(factor(tob_num), ref = "0"),
+    cancer_num = relevel(factor(cancer_num), ref = "0"),
+    mj_year_num = relevel(factor(mj_year_num), ref = "0"),
     antidep_num = relevel(factor(antidep_num), ref = "0")
-  )
+    )
 
 
 glm.adjusted <- glm(mj_use_combined_num ~ anx_depr_num + 
-                      sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num + antidep_num, 
+                      sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num + cancer_num + mj_year_num, 
                     data = df_anx_depr, 
                     family = binomial())
 
@@ -757,8 +775,7 @@ df_depr <- df_depr %>%
       age_group == "50-59" ~ 0,
       age_group == "60-69" ~ 1,
       age_group == "70-79" ~ 2,
-      age_group == "80-89" ~ 3,
-      age_group == "90+" ~ 4
+      age_group == "80+" ~ 3,
     ),
     educ_cat_num = case_when(
       educ_cat == "Less than High School" ~ 0,
@@ -779,12 +796,19 @@ df_depr <- df_depr %>%
     tob_num = case_when(
       tob == "Non-smokers" ~ 0,
       tob == "Former smokers" ~ 1,
-      tob == "Light smokers (1-13 cigarettes/day)" ~ 2,
-      tob == "Heavy smokers (>13 cigarettes)" ~ 3
+      tob == "Current smokers" ~ 2,
+    ),
+    cancer_num = case_when(
+      cancer == "No cancer" ~ 0,
+      cancer == "Cancer" ~ 1
     ),
     antidep_num = case_when(
       antidep == "No" ~ 0,
       antidep == "Yes" ~ 1
+    ),
+    mj_year_num = case_when(
+      mj_year == 2018 ~ 0,
+      mj_year == 2020 ~ 1
     ),
     race_eth_num = case_when(
       race_eth == "White non-hispanic" ~ 0,
@@ -802,6 +826,8 @@ table(df_depr$hh_poverty_num, exclude = NULL)
 table(df_depr$Alcohol_Use_num, exclude = NULL)
 table(df_depr$tob_num, exclude = NULL)
 table(df_depr$antidep_num, exclude = NULL)
+table(df_depr$cancer_num, exclude = NULL)
+table(df_depr$mj_year_num, exclude = NULL)
 table(df_depr$race_eth_num, exclude = NULL)
 
 # factoring covariates
@@ -814,6 +840,8 @@ df_depr <- df_depr %>%
     Alcohol_Use_num = relevel(factor(Alcohol_Use_num), ref = "0"),
     tob_num = relevel(factor(tob_num), ref = "0"),
     antidep_num = relevel(factor(antidep_num), ref = "0"),
+    cancer_num = relevel(factor(cancer_num), ref = "0"),
+    mj_year_num = relevel(factor(mj_year_num), ref = "0"),
     race_eth_num = relevel(factor(race_eth_num), ref = "0")
   )
 
@@ -853,7 +881,7 @@ table(df_depr_noantidep$depr_num, df_depr_noantidep$mj_use_combined)
 df_depr_noantidep <- subset(df_depr, df_depr$antidep_num == 0)
 
 glm.adjusted_noantidep <- glm(mj_use_combined_num ~ depr_num + 
-                      sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num, 
+                      sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num + cancer_num + mj_year_num, 
                     data = df_depr_noantidep, 
                     family = binomial())
 
@@ -883,9 +911,9 @@ exp(confint(glm.crude_antidep))
 
 table(df_depr_antidep$depr_num, df_depr_antidep$mj_use_combined)
 
-##no antidepressants adjusted regression
+##antidepressants adjusted regression
 glm.adjusted_antidep <- glm(mj_use_combined_num ~ depr_num + 
-                                sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num, 
+                                sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num + cancer_num + mj_year_num, 
                               data = df_depr_antidep, 
                               family = binomial())
 
@@ -917,7 +945,7 @@ table(df_depr_white$depr_num, df_depr_white$mj_use_combined)
 
 ##white non-hispanic adjusted regression
 glm.adjusted_white <- glm(mj_use_combined_num ~ depr_num + 
-                              sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num, 
+                              sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num + cancer_num, 
                             data = df_depr_white, 
                             family = binomial())
 
@@ -949,7 +977,7 @@ table(df_depr_black$depr_num, df_depr_black$mj_use_combined)
 
 ##black non-hispanic adjusted regression
 glm.adjusted_black <- glm(mj_use_combined_num ~ depr_num + 
-                            sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num, 
+                            sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num + cancer_num + mj_year_num, 
                           data = df_depr_black, 
                           family = binomial())
 
@@ -980,7 +1008,7 @@ table(df_depr_hispanic$depr_num, df_depr_hispanic$mj_use_combined)
 
 ##Hispanic adjusted regression
 glm.adjusted_hispanic <- glm(mj_use_combined_num ~ depr_num + 
-                            sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num, 
+                            sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num + cancer_num + mj_year_num, 
                           data = df_depr_hispanic, 
                           family = binomial())
 
