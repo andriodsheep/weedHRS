@@ -3,6 +3,9 @@ library(stringr)
 library(tidyverse)
 library(table1)
 library(Hmisc)
+library(MASS)
+
+setwd("C:/Users/nfinney/OneDrive - Boston University/Documents/EP816/Weed data")
 
 ####DATA MERGING AND CLEANING----
 
@@ -36,7 +39,7 @@ cannabis_module<-read_sas("weed.sas7bdat")
 cannabis_module_clean <- cannabis_module %>%
   mutate(HHID=as.numeric(str_remove(HHID, "^0+")),
          HHIDPN = as.numeric(paste0(HHID,PN))) %>%
-  select(-c(HHID,PN))
+         select(-c(HHID,PN))
 
 #merge the 3 datasets
 combined_weed_cannabis <- full_join(weed2020, cannabis_module_clean, by = "HHIDPN")
@@ -761,7 +764,10 @@ confint(glm.adjusted)
 exp(glm.adjusted$coefficients)
 exp(confint(glm.adjusted))
 
+step.adjusted <- glm.adjusted %>% stepAIC()
+step.adjusted_back <- glm.adjusted %>% stepAIC(direction="backward")
 
+exp(coef(step.adjusted))
 
 ## adjusted association with depression only ####
 # need to categorize covariates as numeric
