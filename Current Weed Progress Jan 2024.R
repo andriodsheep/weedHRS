@@ -5,8 +5,6 @@ library(table1)
 library(Hmisc)
 library(MASS)
 
-setwd("C:/Users/nfinney/OneDrive - Boston University/Documents/EP816/Weed data")
-
 ####DATA MERGING AND CLEANING----
 
 #Weed Data from 2020 Module 10
@@ -19,7 +17,7 @@ weed2020 <- weed2020[!is.na(weed2020$RV655), ]
 #combine HHID and PN
 weed2020 <- weed2020 %>%
   mutate(HHIDPN = as.numeric(paste0(HHID, PN))) %>%
-  select(-c(HHID, PN))  
+  select(c(-HHID, -PN))  
 
 #operationalized weed variable
 weed2020 <- weed2020 %>%
@@ -39,7 +37,7 @@ cannabis_module<-read_sas("weed.sas7bdat")
 cannabis_module_clean <- cannabis_module %>%
   mutate(HHID=as.numeric(str_remove(HHID, "^0+")),
          HHIDPN = as.numeric(paste0(HHID,PN))) %>%
-         select(-c(HHID,PN))
+  select(-c(HHID,PN))
 
 #merge the 3 datasets
 combined_weed_cannabis <- full_join(weed2020, cannabis_module_clean, by = "HHIDPN")
@@ -887,7 +885,7 @@ table(df_depr_noantidep$depr_num, df_depr_noantidep$mj_use_combined)
 df_depr_noantidep <- subset(df_depr, df_depr$antidep_num == 0)
 
 glm.adjusted_noantidep <- glm(mj_use_combined_num ~ depr_num + 
-                      sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num + cancer_num + mj_year_num, 
+                      sex_num + age_group_num + educ_cat_num + Alcohol_Use_num + tob_num, 
                     data = df_depr_noantidep, 
                     family = binomial())
 
@@ -919,7 +917,7 @@ table(df_depr_antidep$depr_num, df_depr_antidep$mj_use_combined)
 
 ##antidepressants adjusted regression
 glm.adjusted_antidep <- glm(mj_use_combined_num ~ depr_num + 
-                                sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num + cancer_num + mj_year_num, 
+                                sex_num + age_group_num + educ_cat_num + Alcohol_Use_num + tob_num, 
                               data = df_depr_antidep, 
                               family = binomial())
 
@@ -951,7 +949,7 @@ table(df_depr_white$depr_num, df_depr_white$mj_use_combined)
 
 ##white non-hispanic adjusted regression
 glm.adjusted_white <- glm(mj_use_combined_num ~ depr_num + 
-                              sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num + cancer_num + mj_year_num, 
+                              sex_num + age_group_num + educ_cat_num + Alcohol_Use_num + tob_num, 
                             data = df_depr_white, 
                             family = binomial())
 
@@ -983,7 +981,7 @@ table(df_depr_black$depr_num, df_depr_black$mj_use_combined)
 
 ##black non-hispanic adjusted regression
 glm.adjusted_black <- glm(mj_use_combined_num ~ depr_num + 
-                            sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num + cancer_num + mj_year_num, 
+                            sex_num + age_group_num + educ_cat_num + Alcohol_Use_num + tob_num, 
                           data = df_depr_black, 
                           family = binomial())
 
@@ -1014,7 +1012,7 @@ table(df_depr_hispanic$depr_num, df_depr_hispanic$mj_use_combined)
 
 ##Hispanic adjusted regression
 glm.adjusted_hispanic <- glm(mj_use_combined_num ~ depr_num + 
-                            sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num + cancer_num + mj_year_num, 
+                            sex_num + age_group_num + educ_cat_num + Alcohol_Use_num + tob_num, 
                           data = df_depr_hispanic, 
                           family = binomial())
 
