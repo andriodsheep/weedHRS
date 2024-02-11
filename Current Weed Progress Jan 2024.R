@@ -139,7 +139,7 @@ q6_clean <- q6_clean %>%
   mutate(mj_use_combined = case_when(
     mj_pastyr_18 == 1 | mj_use_mod10 == 1 ~ "Use in Past Year",
     mj_pastyr_18 == 5 | mj_use_mod10 == 5 | mj_ever_18 == 5 ~ "Not Used in Past Year",
-    TRUE ~ "Other/Unknown"
+    TRUE ~ NA
   ))
 
 table(q6_clean$mj_use_combined)
