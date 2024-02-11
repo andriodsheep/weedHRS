@@ -1,9 +1,8 @@
 library(haven) 
 library(stringr)
-library(tidyverse)
 library(table1)
 library(Hmisc)
-library(MASS)
+library(tidyverse)
 
 ####DATA MERGING AND CLEANING----
 
@@ -305,8 +304,6 @@ table(q6_clean$educ_cat)
 q6_clean$hh_poverty <- ifelse(q6_clean$mj_year == 2018, q6_clean$hh_poverty_18,
                               ifelse(q6_clean$mj_year == 2020, q6_clean$hh_poverty_20, NA))
 
-q6_clean$hh_poverty[is.na(q6_clean$hh_poverty)] <- 0
-
 q6_clean$hh_poverty <- factor(
   q6_clean$hh_poverty,
   levels = c(0, 1),
@@ -446,8 +443,7 @@ table(q6_clean$antidep)
 
 #Dropping NAs from variables in Table 1
 q6_clean <- q6_clean[q6_clean$age >= 50, ] # age
-q6_clean <- q6_clean[complete.cases(q6_clean[c("race_eth", "educ_cat", "hh_poverty", "tob", "cancer")]), ] #race and education
-
+q6_clean <- q6_clean[complete.cases(q6_clean[c("race_eth", "educ_cat", "hh_poverty", "tob", "cancer", "mj_use_combined")]), ] 
 
 #Summary Statistics----
 # # Set custom labels for variables OVERRALL
@@ -762,10 +758,18 @@ confint(glm.adjusted)
 exp(glm.adjusted$coefficients)
 exp(confint(glm.adjusted))
 
-step.adjusted <- glm.adjusted %>% stepAIC()
-step.adjusted_back <- glm.adjusted %>% stepAIC(direction="backward")
+step.adjusted <- glm.adjusted %>% MASS::stepAIC()
+step.adjusted_back <- glm.adjusted %>% MASS::stepAIC(direction="backward")
 
-exp(coef(step.adjusted))
+
+glm.adjusted.new <- glm(mj_use_combined_num ~ anx_depr_num + 
+                      sex_num + age_group_num + educ_cat_num + Alcohol_Use_num + tob_num, 
+                    data = df_anx_depr, 
+                    family = binomial())
+
+exp(coef(glm.adjusted.new))
+exp(confint(glm.adjusted.new))
+
 
 ## adjusted association with depression only ####
 # need to categorize covariates as numeric
@@ -852,7 +856,7 @@ df_depr <- df_depr %>%
 
 ##testing for interaction
 glm.adjusted <- glm(mj_use_combined_num ~ depr_num + depr_num*antidep_num +
-                      sex_num + age_group_num + educ_cat_num + hh_poverty_num + Alcohol_Use_num + tob_num, 
+                      sex_num + age_group_num + educ_cat_num + Alcohol_Use_num + tob_num, 
                     data = df_depr, 
                     family = binomial())
 
@@ -866,6 +870,8 @@ exp(confint(glm.adjusted))
 
 ##no antidepressants unadjusted regression
 df_depr_noantidep <- subset(df_depr, df_depr$antidep_num == 0)
+nrow(df_depr)
+nrow(df_depr_noantidep)
 
 glm.crude_noantidep <- glm(mj_use_combined_num ~ depr_num, 
                               data = df_depr_noantidep, 
